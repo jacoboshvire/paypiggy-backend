@@ -7,4 +7,4 @@ const app = express();
 app.use(express.json());
 app.use("/api/users", userRoutes);
 
-app.listen(8080, () => console.log("Running on port 3000"));
+app.listen(8080, () => console.log("Running on port 8080"));

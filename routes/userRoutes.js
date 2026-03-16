@@ -6,6 +6,7 @@ const {
   getUsers,
   createUser,
   updateUser,
+  deleteuser,
 } = require("../controllers/userController");
 
 router.get("/", getUsers);

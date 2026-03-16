@@ -26,3 +26,9 @@ exports.updateUser = async (req, res) => {
     res.status(500).json({ status: "error", message: err.message });
   }
 };
+
+exports.deleteUser = async (req, res) => {
+    try{
+        res.json({status: "success", infor: "data delete"})
+    }
+}

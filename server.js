@@ -17,4 +17,4 @@ app.use("api/transaction", transactionRoutes);
 
 const Port = process.env.PORT;
 
-app.listen(8080 || PORT, () => console.log("Running on port 8080"));
+app.listen(8080 || Port, () => console.log("Running on port 8080"));

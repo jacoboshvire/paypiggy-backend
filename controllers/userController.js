@@ -13,7 +13,7 @@ exports.getUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    res.json({ status: "success", infor: "createdUser" });
+    res.json({ status: "success", infor: "created User" });
   } catch (err) {
     res.status(500).json({ status: "error", message: err.message });
   }

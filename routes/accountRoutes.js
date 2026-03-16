@@ -11,5 +11,6 @@ const { get } = require("./userRoutes");
 
 router.get("/", getTransaction);
 router.post("/", postTransaction);
+router.delete("/", deleteTransaction);
 
 module.exports = router();

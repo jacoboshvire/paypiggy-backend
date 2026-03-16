@@ -7,5 +7,8 @@ const {
   deleteTransaction,
   postTransaction,
 } = require("../controllers/transactionController");
+const { get } = require("./userRoutes");
+
+router.get("/", getTransaction);
 
 module.exports = router();

@@ -7,7 +7,7 @@ const pool = mysql
   .createPool({
     host: "localhost",
     user: process.env.DB_USER,
-    password: "your-password",
+    password: process.env.DB_PASSWORD,
     database: "your-database",
   })
   .promise();

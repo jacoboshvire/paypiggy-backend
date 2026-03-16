@@ -1,2 +1,15 @@
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.local
+.env.production
+```
+
+This way `.env.example` (with dummy values) can still be committed as a reference:
+```
+# .env.example
+DB_HOST=localhost
+DB_USER=your-user
+DB_PASSWORD=your-password
+DB_NAME=banking_app
+JWT_SECRET=your-secret-key
+PORT=3000

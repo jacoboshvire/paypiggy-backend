@@ -12,8 +12,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/auth", authRoutes);
-app.use("/api/accounts", accountRoutes);
-app.use("/api/transactions", transactionRoutes);
+app.use("/api/users", userRoutes);
+// app.use("api/account", accountRoutes);
+// app.use("api/transaction", transactionRoutes);
 
 module.exports = app;

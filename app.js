@@ -1,7 +1,7 @@
 /** @format */
 
 const express = require("express");
-const cors = require("cros");
+const cors = require("cors");
 
 const userRoutes = require("./routes/userRoutes");
 const accountRoutes = require("./routes/accountRoutes");

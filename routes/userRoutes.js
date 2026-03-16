@@ -10,6 +10,6 @@ const {
 } = require("../controllers/userController");
 
 router.get("/", getUsers);
-// router.post("/", createUser);
+router.post("/", createUser);
 
 module.exports = router;

@@ -9,8 +9,8 @@ const {
 } = require("../controllers/transactionController");
 const { get } = require("./userRoutes");
 
-router.get("/", getTransaction);
+router.get("/", getAccount);
 router.post("/", postAccount);
-router.delete("/", deleteTransaction);
+router.delete("/", deleteAccount);
 
 module.exports = router();

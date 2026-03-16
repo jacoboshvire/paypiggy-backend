@@ -2,7 +2,7 @@
 
 // db.js
 const mysql = require("mysql2");
-
+const env = require("dotenv");
 const pool = mysql
   .createPool({
     host: "localhost",

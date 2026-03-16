@@ -7,9 +7,6 @@
 This way `.env.example` (with dummy values) can still be committed as a reference:
 ```
 # .env.example
-DB_HOST=localhost
-DB_USER=your-user
-DB_PASSWORD=your-password
-DB_NAME=banking_app
-JWT_SECRET=your-secret-key
-PORT=3000
+DB_USER="Paypiggy"
+DB_PASSWORD="jac0831#@$"
+DB_DATABASE_NAME="Paypiggy"

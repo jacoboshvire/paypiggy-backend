@@ -10,3 +10,5 @@ exports.getUsers = async (req, res) => {
     res.status(500).json({ status: "error", message: err.message });
   }
 };
+
+exports.createUser = async (req, res) => {};

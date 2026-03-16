@@ -5,7 +5,7 @@ const router = express.Router();
 const {
   getAccount,
   deleteAccount,
-  postTransaction,
+  postAccount,
 } = require("../controllers/transactionController");
 const { get } = require("./userRoutes");
 

@@ -1,5 +1,6 @@
 /** @format */
 
+const { messaging } = require("firebase-admin");
 const { fetchUsers, insertUser } = require("../models/userModel");
 
 exports.getUsers = async (req, res) => {
@@ -28,7 +29,9 @@ exports.updateUser = async (req, res) => {
 };
 
 exports.deleteUser = async (req, res) => {
-    try{
-        res.json({status: "success", infor: "User delete"})
-    }
-}
+  try {
+    res.json({ status: "success", infor: "User delete" });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
+};

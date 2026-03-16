@@ -11,5 +11,6 @@ const {
 
 router.get("/", getUsers);
 router.post("/", createUser);
+router.put("/", updateUser);
 
 module.exports = router;

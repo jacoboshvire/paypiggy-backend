@@ -3,8 +3,8 @@
 const express = require("express");
 const router = express.Router();
 const {
-  getaccount,
-  deleteTransaction,
+  getAccount,
+  deleteAccount,
   postTransaction,
 } = require("../controllers/transactionController");
 const { get } = require("./userRoutes");

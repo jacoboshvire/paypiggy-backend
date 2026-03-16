@@ -11,4 +11,10 @@ exports.getUsers = async (req, res) => {
   }
 };
 
-exports.createUser = async (req, res) => {};
+exports.createUser = async (req, res) => {
+    try{
+        res.json)({status: "success"})
+    } catch (err){
+
+    }
+};

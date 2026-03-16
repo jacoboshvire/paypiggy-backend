@@ -10,5 +10,6 @@ const {
 const { get } = require("./userRoutes");
 
 router.get("/", getTransaction);
+router.post("/", postTransaction);
 
 module.exports = router();

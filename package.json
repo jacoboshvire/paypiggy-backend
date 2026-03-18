@@ -4,7 +4,8 @@
   "description": "building a banking webapp with critical system and fraud detection in mind",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
   },
   "author": "Ejiro Jacob Oshevire",
   "license": "ISC",

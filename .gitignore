@@ -1,18 +1,29 @@
-# env files
+# -----------------------------
+# Environment files (NEVER COMMIT)
+# -----------------------------
 .env
 .env.local
+.env.development
 .env.production
 
-# autopush script
+# -----------------------------
+# Logs
+# -----------------------------
+logs
+*.log
+npm-debug.log*
+
+# -----------------------------
+# Node modules
+# -----------------------------
+node_modules/
+
+# -----------------------------
+# OS files
+# -----------------------------
+.DS_Store
+
+# -----------------------------
+# Scripts (local only)
+# -----------------------------
 autopush.sh
-```
-
-This way `.env.example` (with dummy values) can still be committed as a reference:
-```
-# .env.example
-DB_USER="Paypiggy"
-DB_PASSWORD="jac0831#@$"
-DB_DATABASE_NAME="Paypiggy"
-
-#git to ignore autopush
-./autopush.sh

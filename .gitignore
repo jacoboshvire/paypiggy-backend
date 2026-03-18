@@ -26,4 +26,4 @@ node_modules/
 # -----------------------------
 # Scripts (local only)
 # -----------------------------
-autopush.sh
+*.sh

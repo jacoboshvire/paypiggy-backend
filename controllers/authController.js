@@ -3,12 +3,10 @@ const db = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// REGISTER
 exports.register = async (req, res) => {
   const { fullname, email, password } = req.body;
 
   try {
-    // check if user exists
     const [existing] = await db.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
@@ -17,13 +15,12 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // insert user
+    // FIXED QUERY ✅
     const [result] = await db.query(
-      "INSERT INTO users (email, password) VALUES (?, ?)",
-      [email, fullname, hashedPassword],
+      "INSERT INTO users (first_name, email, password) VALUES (?, ?, ?)",
+      [fullname, email, hashedPassword],
     );
 
     res.status(201).json({

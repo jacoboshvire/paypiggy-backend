@@ -19,7 +19,7 @@ exports.register = async (req, res) => {
 
     // FIXED QUERY ✅
     const [result] = await db.query(
-      "INSERT INTO users (first_name, email, password) VALUES (?, ?, ?)",
+      "INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)",
       [fullname, email, hashedPassword],
     );
 

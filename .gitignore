@@ -12,4 +12,4 @@ DB_PASSWORD="jac0831#@$"
 DB_DATABASE_NAME="Paypiggy"
 
 #git to ignore autopush
-autopush
+./autopush.sh

@@ -2,6 +2,9 @@
 .env
 .env.local
 .env.production
+
+# autopush script
+autopush.sh
 ```
 
 This way `.env.example` (with dummy values) can still be committed as a reference:

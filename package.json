@@ -10,6 +10,7 @@
   "author": "Ejiro Jacob Oshevire",
   "license": "ISC",
   "dependencies": {
+    "@maxmind/geoip2-node": "^6.3.4",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",

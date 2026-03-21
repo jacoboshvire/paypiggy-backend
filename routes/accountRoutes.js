@@ -6,8 +6,6 @@ const accountController = require("../controllers/accountController");
 const verifyToken = require("../middleware/auth.middleware");
 const fraudCheck = require("../middleware/fraudMiddleware");
 const ukOnlyGeoCheck = require("../middleware/geoMiddleware");
-
-// ukOnlyGeoCheck runs on ALL routes — no UK IP, no access
 router.post(
   "/",
   verifyToken,

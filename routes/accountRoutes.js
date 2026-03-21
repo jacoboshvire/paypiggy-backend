@@ -5,12 +5,34 @@ const router = express.Router();
 const accountController = require("../controllers/accountController");
 const verifyToken = require("../middleware/auth.middleware");
 const fraudCheck = require("../middleware/fraudMiddleware");
+const ukOnlyGeoCheck = require("../middleware/geoMiddleware");
 
-// fraudCheck only applies to POST (account creation)
-router.post("/", verifyToken, fraudCheck, accountController.createAccount);
-router.get("/", verifyToken, accountController.getAllAccounts);
-router.get("/:id", verifyToken, accountController.getAccountById);
-router.put("/:id", verifyToken, accountController.updateAccount);
-router.delete("/:id", verifyToken, accountController.deleteAccount);
+// ukOnlyGeoCheck runs on ALL routes — no UK IP, no access
+router.post(
+  "/",
+  verifyToken,
+  ukOnlyGeoCheck,
+  fraudCheck,
+  accountController.createAccount,
+);
+router.get("/", verifyToken, ukOnlyGeoCheck, accountController.getAllAccounts);
+router.get(
+  "/:id",
+  verifyToken,
+  ukOnlyGeoCheck,
+  accountController.getAccountById,
+);
+router.put(
+  "/:id",
+  verifyToken,
+  ukOnlyGeoCheck,
+  accountController.updateAccount,
+);
+router.delete(
+  "/:id",
+  verifyToken,
+  ukOnlyGeoCheck,
+  accountController.deleteAccount,
+);
 
 module.exports = router;

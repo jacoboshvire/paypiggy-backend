@@ -6,6 +6,7 @@ const accountController = require("../controllers/accountController");
 const verifyToken = require("../middleware/auth.middleware");
 const fraudCheck = require("../middleware/fraudMiddleware");
 const ukOnlyGeoCheck = require("../middleware/geoMiddleware");
+
 router.post(
   "/",
   verifyToken,

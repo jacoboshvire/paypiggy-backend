@@ -9,48 +9,23 @@ const FRAUD_RULES = {
   MIN_ACCOUNT_AGE_DAYS: 1,
 };
 
-// Velocity check — too many requests in short time
+// Velocity check (FIXED → uses transactions)
 const checkVelocity = async (userId) => {
   const [rows] = await db.query(
-    `SELECT COUNT(*) as count FROM accounts
-     WHERE user_id = ? AND created_at >= NOW() - INTERVAL 1 MINUTE`,
-    [userId],
+    `SELECT COUNT(*) as count FROM transactions 
+     WHERE created_at >= NOW() - INTERVAL 1 MINUTE`,
   );
+
   return rows[0].count >= FRAUD_RULES.MAX_TRANSACTIONS_PER_MINUTE;
 };
 
-// Large/unusual amount check
-const checkLargeAmount = (balance) => {
-  return parseFloat(balance) > FRAUD_RULES.LARGE_AMOUNT_THRESHOLD;
-};
-
-// Duplicate account number check
-const checkDuplicateAccount = async (accountNumber) => {
-  const [rows] = await db.query(
-    `SELECT id FROM accounts WHERE account_number = ?`,
-    [accountNumber],
-  );
-  return rows.length > 0;
-};
-
-// Suspicious IP check — flag known bad IP ranges or repeated IPs
-const checkSuspiciousIP = async (ip) => {
-  const [rows] = await db.query(
-    `SELECT COUNT(*) as count FROM accounts
-     WHERE created_by_ip = ? AND created_at >= NOW() - INTERVAL 1 HOUR`,
-    [ip],
-  );
-  // More than 10 accounts created from same IP in 1 hour is suspicious
-  return rows[0].count >= 10;
-};
-
-// Age check — user account must be old enough
+// Account age check
 const checkAccountAge = async (userId) => {
   const [rows] = await db.query(`SELECT created_at FROM users WHERE id = ?`, [
     userId,
   ]);
 
-  if (rows.length === 0) return true; // user not found = suspicious
+  if (rows.length === 0) return true;
 
   const createdAt = new Date(rows[0].created_at);
   const now = new Date();
@@ -59,84 +34,77 @@ const checkAccountAge = async (userId) => {
   return diffDays < FRAUD_RULES.MIN_ACCOUNT_AGE_DAYS;
 };
 
-// Main fraud detection middleware
+// ✅ Suspicious IP check
+const checkSuspiciousIP = async (ip) => {
+  const [rows] = await db.query(
+    `SELECT COUNT(*) as count FROM transactions 
+     WHERE created_at >= NOW() - INTERVAL 1 HOUR`,
+  );
+
+  return rows[0].count > 20;
+};
+
+// 🔥 MAIN FRAUD MIDDLEWARE
 const fraudCheck = async (req, res, next) => {
   try {
-    const { user_id, account_number, balance } = req.body;
+    const userId = req.user.id;
+    const { amount } = req.body;
+
     const ip =
       req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-    // 1. Velocity check
-    const tooManyRequests = await checkVelocity(user_id);
-    if (tooManyRequests) {
-      return res.status(429).json({
-        error: "Fraud detected",
-        reason: "Too many accounts created in a short period",
-      });
-    }
-
-    // 2. Large amount check
-    if (balance && checkLargeAmount(balance)) {
+    // 🧠 1. Basic rule checks
+    if (amount > FRAUD_RULES.LARGE_AMOUNT_THRESHOLD) {
       return res.status(400).json({
-        error: "Fraud detected",
-        reason: `Opening balance exceeds allowed threshold of £${FRAUD_RULES.LARGE_AMOUNT_THRESHOLD.toLocaleString()}`,
+        message: "Transaction flagged",
+        reason: "Amount too large",
       });
     }
 
-    // 3. Duplicate account number
-    if (account_number) {
-      const isDuplicate = await checkDuplicateAccount(account_number);
-      if (isDuplicate) {
-        return res.status(409).json({
-          error: "Fraud detected",
-          reason: "Account number already exists",
-        });
-      }
+    const tooFast = await checkVelocity(userId);
+    if (tooFast) {
+      return res.status(429).json({
+        message: "Too many transactions",
+      });
     }
 
-    // 4. Suspicious IP
+    const tooNew = await checkAccountAge(userId);
+    if (tooNew) {
+      return res.status(403).json({
+        message: "Account too new",
+      });
+    }
+
     const suspiciousIP = await checkSuspiciousIP(ip);
     if (suspiciousIP) {
       return res.status(403).json({
-        error: "Fraud detected",
-        reason: "Too many accounts created from this IP address",
+        message: "Suspicious activity detected",
       });
     }
 
-    // 5. Account age check
-    const tooNew = await checkAccountAge(user_id);
-    if (tooNew) {
+    // 🧠 2. Risk scoring engine
+    const { risk, reasons } = await calculateRisk({
+      userId,
+      amount,
+    });
+
+    req.fraud = { risk, reasons };
+
+    if (risk >= 70) {
       return res.status(403).json({
-        error: "Fraud detected",
-        reason: "User account is too new to create a bank account",
+        message: "Transaction blocked",
+        risk,
+        reasons,
       });
     }
 
     next();
   } catch (err) {
-    res.status(500).json({ error: "Fraud check failed", details: err.message });
-  }
-};
-
-exports.fraudCheck = async (req, res, next) => {
-  const { amount } = req.body;
-
-  const { risk, reasons } = await calculateRisk({
-    userId: req.user.id,
-    amount,
-  });
-
-  req.fraud = { risk, reasons };
-
-  if (risk >= 70) {
-    return res.status(403).json({
-      message: "Transaction blocked",
-      risk,
-      reasons,
+    res.status(500).json({
+      error: "Fraud check failed",
+      details: err.message,
     });
   }
-
-  next();
 };
 
-module.exports = fraudCheck;
+module.exports = { fraudCheck };

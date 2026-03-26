@@ -11,7 +11,7 @@ const {
 const {
   transferMoney,
   getTransactionHistory,
-} = require("../controllers/transaction.controller");
+} = require("../controllers/transactionController");
 
 router.post(
   "/transfer",

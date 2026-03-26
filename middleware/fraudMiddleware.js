@@ -1,7 +1,7 @@
 /** @format */
 
 const db = require("../config/db");
-const { calculateRisk } = require("../service/fraud.service");
+const { calculateRisk } = require("../services/fraud.service"); // ✅ FIXED
 
 const FRAUD_RULES = {
   MAX_TRANSACTIONS_PER_MINUTE: 5,
@@ -9,17 +9,48 @@ const FRAUD_RULES = {
   MIN_ACCOUNT_AGE_DAYS: 1,
 };
 
-// Velocity check (FIXED → uses transactions)
+// ----------------------
+// VALIDATE TRANSFER INPUT
+// ----------------------
+const validateTransfer = (req, res, next) => {
+  const { amount, from_account_id, to_account_id } = req.body;
+
+  if (!amount || amount <= 0) {
+    return res.status(400).json({ message: "Invalid amount" });
+  }
+
+  if (!from_account_id || !to_account_id) {
+    return res.status(400).json({
+      message: "Both sender and receiver accounts are required",
+    });
+  }
+
+  if (from_account_id === to_account_id) {
+    return res.status(400).json({
+      message: "Cannot transfer to same account",
+    });
+  }
+
+  next();
+};
+
+// ----------------------
+// VELOCITY CHECK (FIXED)
+// ----------------------
 const checkVelocity = async (userId) => {
   const [rows] = await db.query(
     `SELECT COUNT(*) as count FROM transactions 
-     WHERE created_at >= NOW() - INTERVAL 1 MINUTE`,
+     WHERE user_id = ?
+     AND created_at >= NOW() - INTERVAL 1 MINUTE`,
+    [userId],
   );
 
   return rows[0].count >= FRAUD_RULES.MAX_TRANSACTIONS_PER_MINUTE;
 };
 
-// Account age check
+// ----------------------
+// ACCOUNT AGE CHECK
+// ----------------------
 const checkAccountAge = async (userId) => {
   const [rows] = await db.query(`SELECT created_at FROM users WHERE id = ?`, [
     userId,
@@ -28,23 +59,28 @@ const checkAccountAge = async (userId) => {
   if (rows.length === 0) return true;
 
   const createdAt = new Date(rows[0].created_at);
-  const now = new Date();
-  const diffDays = (now - createdAt) / (1000 * 60 * 60 * 24);
+  const diffDays = (Date.now() - createdAt) / (1000 * 60 * 60 * 24);
 
   return diffDays < FRAUD_RULES.MIN_ACCOUNT_AGE_DAYS;
 };
 
-// Suspicious IP check
+// ----------------------
+// IP CHECK (IMPROVED)
+// ----------------------
 const checkSuspiciousIP = async (ip) => {
   const [rows] = await db.query(
     `SELECT COUNT(*) as count FROM transactions 
-     WHERE created_at >= NOW() - INTERVAL 1 HOUR`,
+     WHERE ip_address = ?
+     AND created_at >= NOW() - INTERVAL 1 HOUR`,
+    [ip],
   );
 
   return rows[0].count > 20;
 };
 
-// MAIN FRAUD MIDDLEWARE
+// ----------------------
+// MAIN FRAUD CHECK
+// ----------------------
 const fraudCheck = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -53,7 +89,7 @@ const fraudCheck = async (req, res, next) => {
     const ip =
       req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-    // 1. Basic rule checks
+    // 1. Basic checks
     if (amount > FRAUD_RULES.LARGE_AMOUNT_THRESHOLD) {
       return res.status(400).json({
         message: "Transaction flagged",
@@ -61,28 +97,25 @@ const fraudCheck = async (req, res, next) => {
       });
     }
 
-    const tooFast = await checkVelocity(userId);
-    if (tooFast) {
+    if (await checkVelocity(userId)) {
       return res.status(429).json({
         message: "Too many transactions",
       });
     }
 
-    const tooNew = await checkAccountAge(userId);
-    if (tooNew) {
+    if (await checkAccountAge(userId)) {
       return res.status(403).json({
         message: "Account too new",
       });
     }
 
-    const suspiciousIP = await checkSuspiciousIP(ip);
-    if (suspiciousIP) {
+    if (await checkSuspiciousIP(ip)) {
       return res.status(403).json({
         message: "Suspicious activity detected",
       });
     }
 
-    // 2. Risk scoring engine
+    // 2. Risk scoring
     const { risk, reasons } = await calculateRisk({
       userId,
       amount,
@@ -109,6 +142,7 @@ const fraudCheck = async (req, res, next) => {
 
 module.exports = {
   fraudCheck,
+  validateTransfer,
   checkVelocity,
   checkAccountAge,
   checkSuspiciousIP,

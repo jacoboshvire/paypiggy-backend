@@ -3,7 +3,7 @@
 const express = require("express");
 const router = express.Router();
 
-const auth = require("../middleware/auth.middleware");
+const verifyToken = require("../middleware/auth.middleware");
 const {
   fraudCheck,
   validateTransfer,
@@ -13,7 +13,13 @@ const {
   getTransactionHistory,
 } = require("../controllers/transactionController");
 
-router.post("/transfer", auth, validateTransfer, fraudCheck, transferMoney);
-router.get("/history/:accountId", auth, getTransactionHistory);
+router.post(
+  "/transfer",
+  verifyToken,
+  validateTransfer,
+  fraudCheck,
+  transferMoney,
+);
+router.get("/history/:accountId", verifyToken, getTransactionHistory);
 
 module.exports = router;

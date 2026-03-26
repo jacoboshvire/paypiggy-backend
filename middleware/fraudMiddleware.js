@@ -107,4 +107,4 @@ const fraudCheck = async (req, res, next) => {
   }
 };
 
-module.exports = { fraudCheck };
+module.exports = { fraudCheck, checkVelocity };

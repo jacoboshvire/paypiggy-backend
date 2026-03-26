@@ -2,15 +2,10 @@
 
 const express = require("express");
 const router = express.Router();
-// const {
-//   getTransaction,
-//   deleteTransaction,
-//   postTransaction,
-// } = require("../controllers/transactionController");
-// const { get } = require("./userRoutes");
 
-// router.get("/", getTransaction);
-// router.post("/", postTransaction);
-// router.delete("/", deleteTransaction);
+const auth = require("../middleware/auth.middleware");
+const { transferMoney } = require("../controllers/transaction.controller");
 
-module.exports = router();
+router.post("/transfer", auth, transferMoney);
+
+module.exports = router;

@@ -34,7 +34,7 @@ const checkAccountAge = async (userId) => {
   return diffDays < FRAUD_RULES.MIN_ACCOUNT_AGE_DAYS;
 };
 
-// ✅ Suspicious IP check
+// Suspicious IP check
 const checkSuspiciousIP = async (ip) => {
   const [rows] = await db.query(
     `SELECT COUNT(*) as count FROM transactions 
@@ -44,7 +44,7 @@ const checkSuspiciousIP = async (ip) => {
   return rows[0].count > 20;
 };
 
-// 🔥 MAIN FRAUD MIDDLEWARE
+// MAIN FRAUD MIDDLEWARE
 const fraudCheck = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -82,7 +82,7 @@ const fraudCheck = async (req, res, next) => {
       });
     }
 
-    // 🧠 2. Risk scoring engine
+    // 2. Risk scoring engine
     const { risk, reasons } = await calculateRisk({
       userId,
       amount,

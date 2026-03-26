@@ -54,4 +54,4 @@ const ukOnlyGeoCheck = async (req, res, next) => {
   }
 };
 
-module.exports = ukOnlyGeoCheck;
+module.exports = { ukOnlyGeoCheck };

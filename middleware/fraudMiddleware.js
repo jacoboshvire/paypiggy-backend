@@ -1,7 +1,7 @@
 /** @format */
 
 const db = require("../config/db");
-const { calculateRisk } = require("../services/fraud.service");
+const { calculateRisk } = require("../service/fraud.service");
 
 const FRAUD_RULES = {
   MAX_TRANSACTIONS_PER_MINUTE: 5,

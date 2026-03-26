@@ -53,7 +53,7 @@ const fraudCheck = async (req, res, next) => {
     const ip =
       req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-    // 🧠 1. Basic rule checks
+    // 1. Basic rule checks
     if (amount > FRAUD_RULES.LARGE_AMOUNT_THRESHOLD) {
       return res.status(400).json({
         message: "Transaction flagged",
@@ -107,4 +107,9 @@ const fraudCheck = async (req, res, next) => {
   }
 };
 
-module.exports = { fraudCheck, checkVelocity };
+module.exports = {
+  fraudCheck,
+  checkVelocity,
+  checkAccountAge,
+  checkSuspiciousIP,
+};

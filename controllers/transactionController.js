@@ -56,3 +56,33 @@ exports.transferMoney = async (req, res) => {
     connection.release();
   }
 };
+
+// GET TRANSACTION HISTORY
+exports.getTransactionHistory = async (req, res) => {
+  const { accountId } = req.params;
+
+  try {
+    const [transactions] = await db.query(
+      `
+      SELECT 
+        t.id,
+        t.from_account,
+        t.to_account,
+        t.amount,
+        t.created_at,
+        CASE 
+          WHEN t.from_account = ? THEN 'debit'
+          ELSE 'credit'
+        END AS type
+      FROM transactions t
+      WHERE t.from_account = ? OR t.to_account = ?
+      ORDER BY t.created_at DESC
+      `,
+      [accountId, accountId, accountId],
+    );
+
+    res.json(transactions);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};

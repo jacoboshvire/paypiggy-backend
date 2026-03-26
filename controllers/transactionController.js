@@ -60,28 +60,81 @@ exports.transferMoney = async (req, res) => {
 // GET TRANSACTION HISTORY
 exports.getTransactionHistory = async (req, res) => {
   const { accountId } = req.params;
+  const userId = req.user.id;
+
+  const {
+    page = 1,
+    limit = 10,
+    type,
+    minAmount,
+    maxAmount,
+    startDate,
+    endDate,
+  } = req.query;
+
+  const offset = (page - 1) * limit;
 
   try {
-    const [transactions] = await db.query(
-      `
-      SELECT 
-        t.id,
-        t.from_account,
-        t.to_account,
-        t.amount,
-        t.created_at,
-        CASE 
-          WHEN t.from_account = ? THEN 'debit'
-          ELSE 'credit'
-        END AS type
-      FROM transactions t
-      WHERE t.from_account = ? OR t.to_account = ?
-      ORDER BY t.created_at DESC
-      `,
-      [accountId, accountId, accountId],
+    // 1. Verify ownership
+    const [account] = await db.query(
+      "SELECT * FROM accounts WHERE id = ? AND user_id = ?",
+      [accountId, userId],
     );
 
-    res.json(transactions);
+    if (account.length === 0) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    // 2. Build query dynamically
+    let query = `
+      SELECT 
+        le.id,
+        le.type,
+        le.amount,
+        le.created_at,
+        t.reference
+      FROM ledger_entries le
+      JOIN transactions t ON le.transaction_id = t.id
+      WHERE le.account_id = ?
+    `;
+
+    const params = [accountId];
+
+    if (type) {
+      query += " AND le.type = ?";
+      params.push(type);
+    }
+
+    if (minAmount) {
+      query += " AND le.amount >= ?";
+      params.push(minAmount);
+    }
+
+    if (maxAmount) {
+      query += " AND le.amount <= ?";
+      params.push(maxAmount);
+    }
+
+    if (startDate) {
+      query += " AND le.created_at >= ?";
+      params.push(startDate);
+    }
+
+    if (endDate) {
+      query += " AND le.created_at <= ?";
+      params.push(endDate);
+    }
+
+    query += " ORDER BY le.created_at DESC LIMIT ? OFFSET ?";
+    params.push(parseInt(limit), parseInt(offset));
+
+    const [rows] = await db.query(query, params);
+
+    res.json({
+      page: Number(page),
+      limit: Number(limit),
+      results: rows,
+    });
   } catch (err) {
     res.status(500).json(err);
   }

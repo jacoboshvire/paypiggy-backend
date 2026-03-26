@@ -10,7 +10,14 @@ const {
   getTransactionHistory,
 } = require("../controllers/transaction.controller");
 
-router.post("/transfer", auth, transferMoney);
+router.post(
+  "/transfer",
+  auth,
+  validateTransfer,
+  idempotencyCheck,
+  fraudCheck,
+  transferMoney,
+);
 router.get("/history/:accountId", auth, getTransactionHistory);
 
 module.exports = router;

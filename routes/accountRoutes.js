@@ -31,12 +31,6 @@ router.get("/:id", verifyToken, ukOnlyGeoCheck, accountController);
 router.put("/:id", verifyToken, ukOnlyGeoCheck, accountController);
 
 // Delete account
-router.delete("/:id", verifyToken, ukOnlyGeoCheck, async (req, res, next) => {
-  try {
-    await accountController.deleteAccount(req, res);
-  } catch (err) {
-    next(err);
-  }
-});
+router.delete("/:id", verifyToken, ukOnlyGeoCheck, accountController);
 
 module.exports = router;

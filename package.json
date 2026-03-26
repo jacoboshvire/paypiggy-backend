@@ -1,6 +1,6 @@
 {
   "name": "paypiggy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "building a banking webapp with critical system and fraud detection in mind",
   "main": "index.js",
   "scripts": {

@@ -2,35 +2,38 @@
 
 const express = require("express");
 const router = express.Router();
-// MIDDLEWARE IMPORTS
+
+// MIDDLEWARE
 const { verifyToken } = require("../middleware/auth.middleware");
 const { fraudCheck } = require("../middleware/fraudMiddleware");
 const { ukOnlyGeoCheck } = require("../middleware/geoMiddleware");
 
 // CONTROLLERS
-const accountController = require("../controllers/accountController");
+const {
+  createAccount,
+  getAllAccounts,
+  getAccountById,
+  updateAccount,
+  deleteAccount,
+} = require("../controllers/accountController");
 
+// ----------------------
 // ROUTES
+// ----------------------
 
-// Create a new account
-router.post(
-  "/",
-  verifyToken, // JWT auth
-  ukOnlyGeoCheck, // Geo-location check (UK only)
-  fraudCheck, // Fraud detection
-  accountController.createAccount,
-);
+// ✅ Create account
+router.post("/", verifyToken, ukOnlyGeoCheck, fraudCheck, createAccount);
 
-// Get all accounts
-router.get("/", verifyToken, ukOnlyGeoCheck, accountController);
+// ✅ Get all accounts
+router.get("/", verifyToken, ukOnlyGeoCheck, getAllAccounts);
 
-// Get a single account by ID
-router.get("/:id", verifyToken, ukOnlyGeoCheck, accountController);
+// ✅ Get single account
+router.get("/:id", verifyToken, ukOnlyGeoCheck, getAccountById);
 
-// Update account
-router.put("/:id", verifyToken, ukOnlyGeoCheck, accountController);
+// ✅ Update account
+router.put("/:id", verifyToken, ukOnlyGeoCheck, updateAccount);
 
-// Delete account
-router.delete("/:id", verifyToken, ukOnlyGeoCheck, accountController);
+// ✅ Delete account
+router.delete("/:id", verifyToken, ukOnlyGeoCheck, deleteAccount);
 
 module.exports = router;

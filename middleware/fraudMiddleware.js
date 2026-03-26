@@ -1,6 +1,7 @@
 /** @format */
 
 const db = require("../config/db");
+const { calculateRisk } = require("../services/fraud.service");
 
 const FRAUD_RULES = {
   MAX_TRANSACTIONS_PER_MINUTE: 5,
@@ -115,6 +116,27 @@ const fraudCheck = async (req, res, next) => {
   } catch (err) {
     res.status(500).json({ error: "Fraud check failed", details: err.message });
   }
+};
+
+exports.fraudCheck = async (req, res, next) => {
+  const { amount } = req.body;
+
+  const { risk, reasons } = await calculateRisk({
+    userId: req.user.id,
+    amount,
+  });
+
+  req.fraud = { risk, reasons };
+
+  if (risk >= 70) {
+    return res.status(403).json({
+      message: "Transaction blocked",
+      risk,
+      reasons,
+    });
+  }
+
+  next();
 };
 
 module.exports = fraudCheck;

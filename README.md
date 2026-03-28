@@ -194,18 +194,6 @@ Create a .env file in the root of the project:
 
 env
 
-# Server
-
-PORT=3000
-JWT_SECRET=your_jwt_secret_here
-
-# MySQL
-
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_db_password
-DB_NAME=paypiggy
-
 # Mailjet
 
 MAILJET_API_KEY=your_mailjet_api_key

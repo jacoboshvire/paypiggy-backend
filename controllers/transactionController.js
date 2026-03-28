@@ -1,12 +1,61 @@
 /** @format */
 
 const db = require("../config/db");
+const admin = require("../utils/firebase");
+const { sendOtpEmail, sendOtpSms } = require("../utils/sendotp");
+const crypto = require("crypto");
+
+// Generate unique reference number
+const generateReference = () => {
+  return "TXN" + crypto.randomBytes(6).toString("hex").toUpperCase();
+};
+
+// Notify user via all channels
+const notifyUser = async (userId, message) => {
+  try {
+    const [users] = await db.query(
+      "SELECT email, phone, fcm_token FROM users WHERE id = ?",
+      [userId],
+    );
+
+    if (users.length === 0) return;
+    const user = users[0];
+
+    // Email
+    if (user.email) {
+      await sendTransactionEmail(user.email, message);
+    }
+
+    // SMS
+    if (user.phone) {
+      await sendTransactionSms(user.phone, message);
+    }
+
+    // Push
+    if (user.fcm_token) {
+      await admin.messaging().send({
+        token: user.fcm_token,
+        notification: { title: "Transaction Alert", body: message },
+      });
+    }
+  } catch (err) {
+    console.error("Notification error:", err.message);
+  }
+};
 
 exports.transferMoney = async (req, res) => {
   const { fromAccount, toAccount, amount } = req.body;
 
   if (!fromAccount || !toAccount || !amount) {
     return res.status(400).json({ message: "Missing fields" });
+  }
+
+  // Transfer limit
+  const TRANSFER_LIMIT = 10000;
+  if (amount > TRANSFER_LIMIT) {
+    return res.status(400).json({
+      message: `Transfer limit is £${TRANSFER_LIMIT}`,
+    });
   }
 
   const connection = await db.getConnection();
@@ -16,39 +65,69 @@ exports.transferMoney = async (req, res) => {
 
     // 1. Check sender balance
     const [sender] = await connection.query(
-      "SELECT balance FROM accounts WHERE id = ?",
+      "SELECT balance, user_id FROM accounts WHERE id = ?",
       [fromAccount],
     );
 
-    if (sender.length === 0) {
-      throw new Error("Sender account not found");
-    }
+    if (sender.length === 0) throw new Error("Sender account not found");
+    if (sender[0].balance < amount) throw new Error("Insufficient balance");
 
-    if (sender[0].balance < amount) {
-      throw new Error("Insufficient balance");
-    }
+    // 2. Check receiver exists
+    const [receiver] = await connection.query(
+      "SELECT id, user_id FROM accounts WHERE id = ?",
+      [toAccount],
+    );
 
-    // 2. Deduct from sender
+    if (receiver.length === 0) throw new Error("Receiver account not found");
+
+    // 3. Deduct from sender
     await connection.query(
       "UPDATE accounts SET balance = balance - ? WHERE id = ?",
       [amount, fromAccount],
     );
 
-    // 3. Add to receiver
+    // 4. Add to receiver
     await connection.query(
       "UPDATE accounts SET balance = balance + ? WHERE id = ?",
       [amount, toAccount],
     );
 
-    // 4. Record transaction
+    // 5. Record transaction with reference
+    const reference = generateReference();
+    const [txn] = await connection.query(
+      "INSERT INTO transactions (from_account, to_account, amount, reference) VALUES (?, ?, ?, ?)",
+      [fromAccount, toAccount, amount, reference],
+    );
+
+    const transactionId = txn.insertId;
+
+    // 6. Write ledger entries
     await connection.query(
-      "INSERT INTO transactions (from_account, to_account, amount) VALUES (?, ?, ?)",
-      [fromAccount, toAccount, amount],
+      "INSERT INTO ledger_entries (transaction_id, account_id, type, amount) VALUES (?, ?, 'debit', ?)",
+      [transactionId, fromAccount, amount],
+    );
+
+    await connection.query(
+      "INSERT INTO ledger_entries (transaction_id, account_id, type, amount) VALUES (?, ?, 'credit', ?)",
+      [transactionId, toAccount, amount],
     );
 
     await connection.commit();
 
-    res.json({ message: "Transfer successful" });
+    // 7. Notify both users (after commit)
+    const senderUserId = sender[0].user_id;
+    const receiverUserId = receiver[0].user_id;
+
+    await notifyUser(
+      senderUserId,
+      `You sent £${amount}. Reference: ${reference}`,
+    );
+    await notifyUser(
+      receiverUserId,
+      `You received £${amount}. Reference: ${reference}`,
+    );
+
+    res.json({ message: "Transfer successful", reference });
   } catch (err) {
     await connection.rollback();
     res.status(500).json({ message: err.message });
@@ -104,22 +183,18 @@ exports.getTransactionHistory = async (req, res) => {
       query += " AND le.type = ?";
       params.push(type);
     }
-
     if (minAmount) {
       query += " AND le.amount >= ?";
       params.push(minAmount);
     }
-
     if (maxAmount) {
       query += " AND le.amount <= ?";
       params.push(maxAmount);
     }
-
     if (startDate) {
       query += " AND le.created_at >= ?";
       params.push(startDate);
     }
-
     if (endDate) {
       query += " AND le.created_at <= ?";
       params.push(endDate);
@@ -130,11 +205,7 @@ exports.getTransactionHistory = async (req, res) => {
 
     const [rows] = await db.query(query, params);
 
-    res.json({
-      page: Number(page),
-      limit: Number(limit),
-      results: rows,
-    });
+    res.json({ page: Number(page), limit: Number(limit), results: rows });
   } catch (err) {
     res.status(500).json(err);
   }

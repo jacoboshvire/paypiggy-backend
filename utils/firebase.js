@@ -13,7 +13,7 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
   );
 } else {
   // Local development (JSON file, gitignored)
-  serviceAccount = require("../quickpark-278e6-firebase-adminsdk-fbsvc-df2cc889af.json");
+  serviceAccount = require("../paypiggy-ab20a-firebase-adminsdk-fbsvc-e6a7abc7a6.json");
 }
 
 // Initialize Firebase ONCE

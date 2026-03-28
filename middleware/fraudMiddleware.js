@@ -2,11 +2,64 @@
 
 const db = require("../config/db");
 const { calculateRisk } = require("../service/fraud.service");
+const {
+  sendTransactionEmail,
+  sendTransactionSms,
+} = require("../utils/sendotp");
+const admin = require("../utils/firebase");
 
 const FRAUD_RULES = {
   MAX_TRANSACTIONS_PER_MINUTE: 5,
   LARGE_AMOUNT_THRESHOLD: 10000,
   MIN_ACCOUNT_AGE_DAYS: 1,
+};
+
+// ----------------------
+// NOTIFY USER (ALL CHANNELS)
+// ----------------------
+const notifyFraudAlert = async (userId, reason) => {
+  try {
+    const [users] = await db.query(
+      "SELECT email, phone, fcm_token, full_name FROM users WHERE id = ?",
+      [userId],
+    );
+
+    if (users.length === 0) return;
+    const user = users[0];
+
+    const message = `Security Alert for ${user.full_name}: Your transaction was flagged — ${reason}. If this wasn't you, please contact support immediately.`;
+
+    // Email
+    if (user.email) {
+      await sendTransactionEmail(user.email, message).catch((err) =>
+        console.error("Email alert failed:", err.message),
+      );
+    }
+
+    // SMS
+    if (user.phone) {
+      await sendTransactionSms(user.phone, message).catch((err) =>
+        console.error("SMS alert failed:", err.message),
+      );
+    }
+
+    // Push
+    if (user.fcm_token) {
+      await admin
+        .messaging()
+        .send({
+          token: user.fcm_token,
+          notification: {
+            title: "🚨 Security Alert",
+            body: message,
+          },
+          data: { type: "fraud_alert", reason },
+        })
+        .catch((err) => console.error("Push alert failed:", err.message));
+    }
+  } catch (err) {
+    console.error("Fraud notification error:", err.message);
+  }
 };
 
 // ----------------------
@@ -35,7 +88,7 @@ const validateTransfer = (req, res, next) => {
 };
 
 // ----------------------
-// VELOCITY CHECK (FIXED)
+// VELOCITY CHECK
 // ----------------------
 const checkVelocity = async (userId) => {
   const [rows] = await db.query(
@@ -65,7 +118,7 @@ const checkAccountAge = async (userId) => {
 };
 
 // ----------------------
-// IP CHECK (IMPROVED)
+// IP CHECK
 // ----------------------
 const checkSuspiciousIP = async (ip) => {
   const [rows] = await db.query(
@@ -79,6 +132,20 @@ const checkSuspiciousIP = async (ip) => {
 };
 
 // ----------------------
+// LOG FRAUD EVENT
+// ----------------------
+const logFraudEvent = async (userId, reason, ip, amount) => {
+  try {
+    await db.query(
+      `INSERT INTO fraud_logs (user_id, reason, ip_address, amount) VALUES (?, ?, ?, ?)`,
+      [userId, reason, ip, amount],
+    );
+  } catch (err) {
+    console.error("Failed to log fraud event:", err.message);
+  }
+};
+
+// ----------------------
 // MAIN FRAUD CHECK
 // ----------------------
 const fraudCheck = async (req, res, next) => {
@@ -89,41 +156,62 @@ const fraudCheck = async (req, res, next) => {
     const ip =
       req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-    // 1. Basic checks
+    // Helper to block + notify + log
+    const blockTransaction = async (statusCode, message, reason) => {
+      await Promise.all([
+        notifyFraudAlert(userId, reason),
+        logFraudEvent(userId, reason, ip, amount),
+      ]);
+      return res.status(statusCode).json({ message, reason });
+    };
+
+    // 1. Large amount check
     if (amount > FRAUD_RULES.LARGE_AMOUNT_THRESHOLD) {
-      return res.status(400).json({
-        message: "Transaction flagged",
-        reason: "Amount too large",
-      });
+      return await blockTransaction(
+        400,
+        "Transaction flagged",
+        "Amount too large",
+      );
     }
 
+    // 2. Velocity check
     if (await checkVelocity(userId)) {
-      return res.status(429).json({
-        message: "Too many transactions",
-      });
+      return await blockTransaction(
+        429,
+        "Too many transactions",
+        "Velocity limit exceeded",
+      );
     }
 
+    // 3. Account age check
     if (await checkAccountAge(userId)) {
-      return res.status(403).json({
-        message: "Account too new",
-      });
+      return await blockTransaction(
+        403,
+        "Account too new",
+        "Account age below minimum",
+      );
     }
 
+    // 4. IP check
     if (await checkSuspiciousIP(ip)) {
-      return res.status(403).json({
-        message: "Suspicious activity detected",
-      });
+      return await blockTransaction(
+        403,
+        "Suspicious activity detected",
+        "Suspicious IP address",
+      );
     }
 
-    // 2. Risk scoring
-    const { risk, reasons } = await calculateRisk({
-      userId,
-      amount,
-    });
+    // 5. Risk scoring
+    const { risk, reasons } = await calculateRisk({ userId, amount });
 
     req.fraud = { risk, reasons };
 
     if (risk >= 70) {
+      await Promise.all([
+        notifyFraudAlert(userId, reasons.join(", ")),
+        logFraudEvent(userId, reasons.join(", "), ip, amount),
+      ]);
+
       return res.status(403).json({
         message: "Transaction blocked",
         risk,

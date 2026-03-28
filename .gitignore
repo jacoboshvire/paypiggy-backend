@@ -27,3 +27,7 @@ node_modules/
 # Scripts (local only)
 # -----------------------------
 *.sh
+*
+
+# Firebase credentials
+paypiggy-ab20a-firebase-adminsdk-fbsvc-e6a7abc7a6.json

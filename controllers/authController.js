@@ -92,6 +92,9 @@ exports.sendOtp = async (req, res) => {
     const otp = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
+    console.log("User object:", user);
+    console.log("Email:", user.email);
+
     // Save OTP to DB
     await db.query(
       "INSERT INTO otps (user_id, otp, channel, expires_at) VALUES (?, ?, ?, ?)",

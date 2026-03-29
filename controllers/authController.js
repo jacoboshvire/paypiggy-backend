@@ -100,7 +100,7 @@ exports.sendOtp = async (req, res) => {
 
     // Send via chosen channel
     if (channel === "email") {
-      await sendOtpEmail(user.email, otp);
+      await sendOtpEmail(users.email, otp);
     } else if (channel === "sms") {
       if (!phone)
         return res

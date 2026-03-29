@@ -128,6 +128,10 @@ exports.sendOtp = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
   const { userId, otp } = req.body;
 
+  console.log("userId:", userId);
+  console.log("otp:", otp);
+  console.log("otp type:", typeof otp);
+
   try {
     const [rows] = await db.query(
       `SELECT * FROM otps 

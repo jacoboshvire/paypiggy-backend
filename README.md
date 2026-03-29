@@ -194,18 +194,6 @@ Create a .env file in the root of the project:
 
 env
 
-# Mailjet
-
-MAILJET_API_KEY=your_mailjet_api_key
-MAILJET_SECRET_KEY=your_mailjet_secret_key
-MAILJET_FROM_EMAIL=noreply@paypiggy.com
-
-# Twilio
-
-TWILIO_ACCOUNT_SID=your_twilio_sid
-TWILIO_AUTH_TOKEN=your_twilio_token
-TWILIO_PHONE_NUMBER=+1234567890
-
 # Firebase (base64 encoded service account JSON)
 
 FIREBASE_SERVICE_ACCOUNT=your_base64_encoded_service_account

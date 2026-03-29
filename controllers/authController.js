@@ -6,6 +6,7 @@ const { generateOTP } = require("../utils/otpUtils");
 const { sendOtpEmail, sendOtpSms, sendOtpPush } = require("../utils/sendotp");
 
 exports.register = async (req, res) => {
+  console.log(req.body);
   try {
     const { fullname, email, password } = req.body || {};
 

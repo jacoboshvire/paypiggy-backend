@@ -9,14 +9,14 @@ exports.register = async (req, res) => {
   try {
     const { fullname, email, password } = req.body || {};
 
-    // 🔥 Validate input FIRST
+    // Validate input FIRST
     if (!fullname || !email || !password) {
       return res.status(400).json({
         message: "fullname, email and password are required",
       });
     }
 
-    // 🔍 Check if user exists
+    // Check if user exists
     const [existing] = await db.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
@@ -25,10 +25,10 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // 🔐 Hash password
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 💾 Insert user
+    // Insert user
     const [result] = await db.query(
       "INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)",
       [fullname, email, hashedPassword],

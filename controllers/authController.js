@@ -6,7 +6,7 @@ const { generateOTP } = require("../utils/otpUtils");
 const { sendOtpEmail, sendOtpSms, sendOtpPush } = require("../utils/sendotp");
 
 exports.register = async (req, res) => {
-  console.log("Body", req.body);
+  // console.log("Body", req.body);
   const { fullname, email, password } = req.body;
 
   try {
@@ -27,7 +27,7 @@ exports.register = async (req, res) => {
 
     res.status(201).json({ message: "User created", userId: result.insertId });
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json({ message: err.message });
   }
 };
 

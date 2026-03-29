@@ -6,10 +6,17 @@ const { generateOTP } = require("../utils/otpUtils");
 const { sendOtpEmail, sendOtpSms, sendOtpPush } = require("../utils/sendotp");
 
 exports.register = async (req, res) => {
-  // console.log("Body", req.body);
-  const { fullname, email, password } = req.body;
-
   try {
+    const { fullname, email, password } = req.body || {};
+
+    // 🔥 Validate input FIRST
+    if (!fullname || !email || !password) {
+      return res.status(400).json({
+        message: "fullname, email and password are required",
+      });
+    }
+
+    // 🔍 Check if user exists
     const [existing] = await db.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
@@ -18,16 +25,22 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    // 🔐 Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 💾 Insert user
     const [result] = await db.query(
       "INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)",
       [fullname, email, hashedPassword],
     );
 
-    res.status(201).json({ message: "User created", userId: result.insertId });
+    res.status(201).json({
+      message: "User created",
+      userId: result.insertId,
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err); // 👈 log for debugging
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 

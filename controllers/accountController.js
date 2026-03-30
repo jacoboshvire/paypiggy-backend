@@ -63,14 +63,29 @@ const updateAccount = async (req, res) => {
   try {
     const { balance, account_type } = req.body;
 
+    // Build query dynamically based on what's provided
+    const fields = [];
+    const values = [];
+
+    if (balance !== undefined) {
+      fields.push("balance = ?");
+      values.push(balance);
+    }
+
+    if (account_type !== undefined && account_type !== "") {
+      fields.push("account_type = ?");
+      values.push(account_type);
+    }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    values.push(req.params.id);
+
     const [result] = await db.query(
-      if (account_type == ""){
-        account_type = "standard"
-      }
-      `UPDATE accounts
-       SET balance = ?, account_type = ?
-       WHERE id = ?`,
-      [balance, account_type, req.params.id],
+      `UPDATE accounts SET ${fields.join(", ")} WHERE id = ?`,
+      values,
     );
 
     if (result.affectedRows === 0)
@@ -81,7 +96,6 @@ const updateAccount = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 // DELETE /api/accounts/:id
 const deleteAccount = async (req, res) => {
   try {

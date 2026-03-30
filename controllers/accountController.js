@@ -18,12 +18,12 @@ const createAccount = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         user_id,
-        first_name,
-        last_name,
         account_number,
         sort_code,
         0.0,
         account_type ?? "standard",
+        first_name,
+        last_name,
       ],
     );
 

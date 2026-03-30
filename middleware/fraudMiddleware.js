@@ -11,7 +11,7 @@ const admin = require("../utils/firebase");
 const FRAUD_RULES = {
   MAX_TRANSACTIONS_PER_MINUTE: 5,
   LARGE_AMOUNT_THRESHOLD: 10000,
-  MIN_ACCOUNT_AGE_DAYS: 1,
+  MIN_ACCOUNT_AGE_DAYS: 0,
 };
 
 // ----------------------

@@ -16,7 +16,15 @@ const createAccount = async (req, res) => {
     const [result] = await db.query(
       `INSERT INTO accounts (user_id, account_number, sort_code, balance, account_type)
        VALUES (?, ?, ?, ?, ?)`,
-      [user_id, account_number, sort_code, 0.0, account_type ?? "standard"],
+      [
+        user_id,
+        frist_name,
+        last_name,
+        account_number,
+        sort_code,
+        0.0,
+        account_type ?? "standard",
+      ],
     );
 
     res.status(201).json({

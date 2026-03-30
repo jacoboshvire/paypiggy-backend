@@ -61,13 +61,13 @@ const getAccountById = async (req, res) => {
 // PUT /api/accounts/:id
 const updateAccount = async (req, res) => {
   try {
-    const { account_number, sort_code, balance, account_type } = req.body;
+    const { balance, account_type } = req.body;
 
     const [result] = await db.query(
       `UPDATE accounts
-       SET account_number = ?, sort_code = ?, balance = ?, account_type = ?
+       SET balance = ?, account_type = ?
        WHERE id = ?`,
-      [account_number, sort_code, balance, account_type, req.params.id],
+      [balance, account_type, req.params.id],
     );
 
     if (result.affectedRows === 0)

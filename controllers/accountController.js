@@ -64,6 +64,9 @@ const updateAccount = async (req, res) => {
     const { balance, account_type } = req.body;
 
     const [result] = await db.query(
+      if (account_type == ""){
+        account_type = "standard"
+      }
       `UPDATE accounts
        SET balance = ?, account_type = ?
        WHERE id = ?`,

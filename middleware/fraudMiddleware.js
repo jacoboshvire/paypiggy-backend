@@ -66,21 +66,19 @@ const notifyFraudAlert = async (userId, reason) => {
 // VALIDATE TRANSFER INPUT
 // ----------------------
 const validateTransfer = (req, res, next) => {
-  const { amount, from_account_id, to_account_id } = req.body;
+  const { amount, fromAccount, toAccountNumber, toSortCode, toName } = req.body;
 
   if (!amount || amount <= 0) {
     return res.status(400).json({ message: "Invalid amount" });
   }
 
-  if (!from_account_id || !to_account_id) {
-    return res.status(400).json({
-      message: "Both sender and receiver accounts are required",
-    });
+  if (!fromAccount) {
+    return res.status(400).json({ message: "Sender account is required" });
   }
 
-  if (from_account_id === to_account_id) {
+  if (!toAccountNumber || !toSortCode || !toName) {
     return res.status(400).json({
-      message: "Cannot transfer to same account",
+      message: "Receiver account number, sort code and name are required",
     });
   }
 

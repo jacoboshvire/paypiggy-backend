@@ -28,8 +28,8 @@ exports.register = async (req, res) => {
 
     // Insert user - update 'name' or 'full_name' to match your table
     const [result] = await db.query(
-      "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-      [fullname, email, hashedPassword],
+      "INSERT INTO users (name, email, password, phonenumber) VALUES (?, ?, ?, ?)",
+      [fullname, email, hashedPassword, phonenumber],
     );
 
     const userId = result.insertId;

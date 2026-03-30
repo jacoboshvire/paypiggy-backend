@@ -123,11 +123,11 @@ exports.sendOtp = async (req, res) => {
     if (channel === "email") {
       await sendOtpEmail(user.email, otp);
     } else if (channel === "sms") {
-      if (!phone)
-        return res
-          .status(400)
-          .json({ message: "Phone number required for SMS" });
-      await sendOtpSms(user.phone, otp);
+      const phoneNumber = phone || user.phone;
+      if (!phoneNumber) {
+        return res.status(400).json({ message: "No phone number found" });
+      }
+      await sendOtpSms(phoneNumber, otp);
     } else if (channel === "push") {
       if (!fcmToken)
         return res.status(400).json({ message: "FCM token required for push" });

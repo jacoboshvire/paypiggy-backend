@@ -4,12 +4,12 @@ const db = require("../config/db");
 
 const idempotencyCheck = async (req, res, next) => {
   try {
-    const key = req.headers["idempotency-key"];
+    let key = req.headers["idempotency-key"];
 
+    // Auto-generate if not provided
     if (!key) {
-      return res.status(400).json({
-        message: "Missing idempotency key",
-      });
+      key = require("crypto").randomUUID();
+      req.headers["idempotency-key"] = key;
     }
 
     const [existing] = await db.query(

@@ -127,7 +127,7 @@ exports.sendOtp = async (req, res) => {
         return res
           .status(400)
           .json({ message: "Phone number required for SMS" });
-      await sendOtpSms(phone, otp);
+      await sendOtpSms(user.phonenumber, otp);
     } else if (channel === "push") {
       if (!fcmToken)
         return res.status(400).json({ message: "FCM token required for push" });

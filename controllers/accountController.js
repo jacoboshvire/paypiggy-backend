@@ -5,7 +5,7 @@ const db = require("../config/db");
 // POST /api/accounts
 const createAccount = async (req, res) => {
   try {
-    const { user_id, account_type } = req.body;
+    const { user_id, account_type, first_name, last_name } = req.body;
 
     const account_number = Math.floor(
       10000000 + Math.random() * 90000000,
@@ -14,11 +14,11 @@ const createAccount = async (req, res) => {
     const sort_code = `${part()}-${part()}-${part()}`;
 
     const [result] = await db.query(
-      `INSERT INTO accounts (user_id, account_number, sort_code, balance, account_type, frist_name, last_name)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO accounts (user_id, account_number, sort_code, balance, account_type, first_name, last_name)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         user_id,
-        frist_name,
+        first_name,
         last_name,
         account_number,
         sort_code,

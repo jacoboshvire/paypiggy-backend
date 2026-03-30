@@ -5,24 +5,28 @@ const db = require("../config/db");
 // POST /api/accounts
 const createAccount = async (req, res) => {
   try {
-    const { user_id, account_number, sort_code, balance, account_type } =
-      req.body;
+    const { user_id, account_type } = req.body;
+
+    const account_number = Math.floor(
+      10000000 + Math.random() * 90000000,
+    ).toString();
+    const part = () => Math.floor(10 + Math.random() * 90);
+    const sort_code = `${part()}-${part()}-${part()}`;
 
     const [result] = await db.query(
       `INSERT INTO accounts (user_id, account_number, sort_code, balance, account_type)
        VALUES (?, ?, ?, ?, ?)`,
-      [
-        user_id,
-        account_number,
-        sort_code,
-        balance ?? 0.0,
-        account_type ?? "standard",
-      ],
+      [user_id, account_number, sort_code, 0.0, account_type ?? "standard"],
     );
 
-    res
-      .status(201)
-      .json({ message: "Account created", accountId: result.insertId });
+    res.status(201).json({
+      message: "Account created",
+      accountId: result.insertId,
+      account_number,
+      sort_code,
+      balance: 0.0,
+      account_type: account_type ?? "standard",
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

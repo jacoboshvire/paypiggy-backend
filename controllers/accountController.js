@@ -69,7 +69,7 @@ const getAccountById = async (req, res) => {
 // PUT /api/accounts/:id
 const updateAccount = async (req, res) => {
   try {
-    const { balance, account_type } = req.body;
+    const { balance, account_type, first_name, last_name } = req.body;
 
     // Build query dynamically based on what's provided
     const fields = [];
@@ -83,6 +83,16 @@ const updateAccount = async (req, res) => {
     if (account_type !== undefined && account_type !== "") {
       fields.push("account_type = ?");
       values.push(account_type);
+    }
+
+    if (first_name !== undefined && first_name !== "") {
+      fields.push("first_name = ?");
+      values.push(first_name);
+    }
+
+    if (last_name !== undefined && last_name !== "") {
+      fields.push("last_name = ?");
+      values.push(last_name);
     }
 
     if (fields.length === 0) {

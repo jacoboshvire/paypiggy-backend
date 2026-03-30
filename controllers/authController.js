@@ -8,11 +8,11 @@ const { sendOtpEmail, sendOtpSms, sendOtpPush } = require("../utils/sendotp");
 exports.register = async (req, res) => {
   console.log(req.body);
   try {
-    const { fullname, email, password } = req.body || {};
+    const { fullname, email, password, phonenumber } = req.body || {};
 
-    if (!fullname || !email || !password) {
+    if (!fullname || !email || !password || !phonenumber) {
       return res.status(400).json({
-        message: "fullname, email and password are required",
+        message: "fullname, email, password and phone number are required",
       });
     }
 

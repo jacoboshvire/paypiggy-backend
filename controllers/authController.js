@@ -8,9 +8,9 @@ const { sendOtpEmail, sendOtpSms, sendOtpPush } = require("../utils/sendotp");
 exports.register = async (req, res) => {
   console.log(req.body);
   try {
-    const { fullname, email, password, phonenumber } = req.body || {};
+    const { fullname, email, password, phone } = req.body || {};
 
-    if (!fullname || !email || !password || !phonenumber) {
+    if (!fullname || !email || !password || !phone) {
       return res.status(400).json({
         message: "fullname, email, password and phone number are required",
       });
@@ -28,8 +28,8 @@ exports.register = async (req, res) => {
 
     // Insert user - update 'name' or 'full_name' to match your table
     const [result] = await db.query(
-      "INSERT INTO users (name, email, password, phonenumber) VALUES (?, ?, ?, ?)",
-      [fullname, email, hashedPassword, phonenumber],
+      "INSERT INTO users (name, email, password, phone) VALUES (?, ?, ?, ?)",
+      [fullname, email, hashedPassword, phone],
     );
 
     const userId = result.insertId;

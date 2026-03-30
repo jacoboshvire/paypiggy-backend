@@ -10,14 +10,12 @@ exports.register = async (req, res) => {
   try {
     const { fullname, email, password } = req.body || {};
 
-    // Validate input FIRST
     if (!fullname || !email || !password) {
       return res.status(400).json({
         message: "fullname, email and password are required",
       });
     }
 
-    // Check if user exists
     const [existing] = await db.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
@@ -26,21 +24,41 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert user
+    // Insert user - update 'name' or 'full_name' to match your table
     const [result] = await db.query(
       "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
       [fullname, email, hashedPassword],
     );
 
+    const userId = result.insertId;
+
+    // Auto generate account
+    const account_number = Math.floor(
+      10000000 + Math.random() * 90000000,
+    ).toString();
+    const part = () => Math.floor(10 + Math.random() * 90);
+    const sort_code = `${part()}-${part()}-${part()}`;
+
+    await db.query(
+      `INSERT INTO accounts (user_id, account_number, sort_code, balance, account_type)
+       VALUES (?, ?, ?, ?, ?)`,
+      [userId, account_number, sort_code, 0.0, "standard"],
+    );
+
     res.status(201).json({
       message: "User created",
-      userId: result.insertId,
+      userId,
+      account: {
+        account_number,
+        sort_code,
+        balance: 0.0,
+        account_type: "standard",
+      },
     });
   } catch (err) {
-    console.error(err); // 👈 log for debugging
+    console.error(err);
     res.status(500).json({ message: "Internal server error" });
   }
 };

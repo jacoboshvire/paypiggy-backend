@@ -44,13 +44,12 @@ const notifyUser = async (userId, message) => {
 };
 
 exports.transferMoney = async (req, res) => {
-  const { fromAccount, toAccount, amount } = req.body;
+  const { fromAccount, toAccountNumber, toSortCode, toName, amount } = req.body;
 
-  if (!fromAccount || !toAccount || !amount) {
+  if (!fromAccount || !toAccountNumber || !toSortCode || !toName || !amount) {
     return res.status(400).json({ message: "Missing fields" });
   }
 
-  // Transfer limit
   const TRANSFER_LIMIT = 10000;
   if (amount > TRANSFER_LIMIT) {
     return res.status(400).json({
@@ -72,13 +71,24 @@ exports.transferMoney = async (req, res) => {
     if (sender.length === 0) throw new Error("Sender account not found");
     if (sender[0].balance < amount) throw new Error("Insufficient balance");
 
-    // 2. Check receiver exists
+    // 2. Find receiver by account number, sort code and name
     const [receiver] = await connection.query(
-      "SELECT id, user_id FROM accounts WHERE id = ?",
-      [toAccount],
+      `SELECT a.id, a.user_id, u.name 
+       FROM accounts a
+       JOIN users u ON a.user_id = u.id
+       WHERE a.account_number = ? 
+       AND a.sort_code = ?
+       AND LOWER(u.name) = LOWER(?)`,
+      [toAccountNumber, toSortCode, toName],
     );
 
-    if (receiver.length === 0) throw new Error("Receiver account not found");
+    if (receiver.length === 0) {
+      throw new Error(
+        "Receiver not found. Please check account number, sort code and name.",
+      );
+    }
+
+    const toAccount = receiver[0].id;
 
     // 3. Deduct from sender
     await connection.query(
@@ -114,20 +124,24 @@ exports.transferMoney = async (req, res) => {
 
     await connection.commit();
 
-    // 7. Notify both users (after commit)
+    // 7. Notify both users
     const senderUserId = sender[0].user_id;
     const receiverUserId = receiver[0].user_id;
 
     await notifyUser(
       senderUserId,
-      `You sent £${amount}. Reference: ${reference}`,
+      `You sent £${amount} to ${receiver[0].name}. Reference: ${reference}`,
     );
     await notifyUser(
       receiverUserId,
       `You received £${amount}. Reference: ${reference}`,
     );
 
-    res.json({ message: "Transfer successful", reference });
+    res.json({
+      message: "Transfer successful",
+      reference,
+      recipient: receiver[0].name,
+    });
   } catch (err) {
     await connection.rollback();
     res.status(500).json({ message: err.message });

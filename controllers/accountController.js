@@ -14,7 +14,7 @@ const createAccount = async (req, res) => {
     const sort_code = `${part()}-${part()}-${part()}`;
 
     const [result] = await db.query(
-      `INSERT INTO accounts (user_id, account_number, sort_code, balance, account_type)
+      `INSERT INTO accounts (user_id, account_number, sort_code, balance, account_type, frist_name, last_name)
        VALUES (?, ?, ?, ?, ?)`,
       [
         user_id,

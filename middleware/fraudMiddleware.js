@@ -91,7 +91,7 @@ const validateTransfer = (req, res, next) => {
 const checkVelocity = async (userId) => {
   const [rows] = await db.query(
     `SELECT COUNT(*) as count FROM transactions 
-     WHERE user_id = ?
+     WHERE from_account IN (SELECT id FROM accounts WHERE user_id = ?)
      AND created_at >= NOW() - INTERVAL 1 MINUTE`,
     [userId],
   );

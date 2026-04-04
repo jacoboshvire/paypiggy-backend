@@ -66,7 +66,7 @@ const getAccountById = async (req, res) => {
   }
 };
 
-// PUT /api/accounts/:id
+// PUT /api/account/:id
 const updateAccount = async (req, res) => {
   try {
     const { balance, account_type, first_name, last_name } = req.body;

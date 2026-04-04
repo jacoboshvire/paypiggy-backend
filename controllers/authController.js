@@ -8,7 +8,7 @@ const { sendOtpEmail, sendOtpSms, sendOtpPush } = require("../utils/sendotp");
 exports.register = async (req, res) => {
   console.log(req.body);
   try {
-    const { fullname, email, password, phone } = req.body || {};
+    const { fullname, email, password, phone, avatar } = req.body || {};
 
     if (!fullname || !email || !password || !phone) {
       return res.status(400).json({
@@ -26,15 +26,13 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert user - update 'name' or 'full_name' to match your table
     const [result] = await db.query(
-      "INSERT INTO users (name, email, password, phone) VALUES (?, ?, ?, ?)",
-      [fullname, email, hashedPassword, phone],
+      "INSERT INTO users (name, email, password, phone, avatar) VALUES (?, ?, ?, ?, ?)",
+      [fullname, email, hashedPassword, phone, avatar],
     );
 
     const userId = result.insertId;
 
-    // Auto generate account
     const account_number = Math.floor(
       10000000 + Math.random() * 90000000,
     ).toString();
@@ -53,6 +51,8 @@ exports.register = async (req, res) => {
       account: {
         account_number,
         sort_code,
+        first_name: fullname.split(" ")[0],
+        last_name: fullname.split(" ")[1] || "",
         balance: 0.0,
         account_type: "standard",
       },

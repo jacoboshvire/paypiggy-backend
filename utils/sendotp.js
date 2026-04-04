@@ -28,12 +28,24 @@ const sendOtpEmail = async (email, otp) => {
   });
 };
 
+const formatPhone = (phone) => {
+  phone = phone.replace(/[\s-]/g, "");
+  if (phone.startsWith("0")) {
+    return "+44" + phone.substring(1);
+  }
+  return phone;
+};
+
 // SMS via Twilio
 const sendOtpSms = async (phone, otp) => {
+  const formattedPhone = formatPhone(phone);
+  console.log("Sending SMS to:", formattedPhone);
+  console.log("From:", process.env.TWILIO_PHONE_NUMBER);
+  console.log("OTP:", otp);
   await twilioClient.messages.create({
     body: `Your OTP code is: ${otp}. It expires in 10 minutes.`,
     from: process.env.TWILIO_PHONE_NUMBER,
-    to: phone,
+    to: formattedPhone,
   });
 };
 

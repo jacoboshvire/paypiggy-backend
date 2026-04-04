@@ -8,9 +8,8 @@ const {
   updateUser,
 } = require("../controllers/userController");
 
-router.get("/", getUsers);
-router.post("/", createUser);
-router.put("/", updateUser);
-// router.delete("/", deleteuser);
+router.get("/", userController.getUsers);
+router.get("/:id", userController.getUserById);
+router.put("/:id", userController.updateUser);
 
 module.exports = router;

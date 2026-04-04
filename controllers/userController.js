@@ -1,20 +1,30 @@
 /** @format */
 
-const { messaging } = require("firebase-admin");
-const { fetchUsers, insertUser } = require("../models/userModel");
+const db = require("../config/db");
 
 exports.getUsers = async (req, res) => {
   try {
-    const users = await fetchUsers();
+    const [users] = await db.query(
+      "SELECT id, name, email, phone, avatar, created_at FROM users",
+    );
     res.json({ status: "success", data: users });
   } catch (err) {
     res.status(500).json({ status: "error", message: err.message });
   }
 };
 
-exports.createUser = async (req, res) => {
+exports.getUserById = async (req, res) => {
   try {
-    res.json({ status: "success", infor: "created User" });
+    const [rows] = await db.query(
+      "SELECT id, name, email, phone, avatar, created_at FROM users WHERE id = ?",
+      [req.params.id],
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(rows[0]);
   } catch (err) {
     res.status(500).json({ status: "error", message: err.message });
   }
@@ -22,16 +32,43 @@ exports.createUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    res.json({ status: "success", infor: "user Edited" });
+    const { name, phone, avatar } = req.body;
+
+    const fields = [];
+    const values = [];
+
+    if (name !== undefined && name !== "") {
+      fields.push("name = ?");
+      values.push(name);
+    }
+
+    if (phone !== undefined && phone !== "") {
+      fields.push("phone = ?");
+      values.push(phone);
+    }
+
+    if (avatar !== undefined && avatar !== "") {
+      fields.push("avatar = ?");
+      values.push(avatar);
+    }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    values.push(req.params.id);
+
+    const [result] = await db.query(
+      `UPDATE users SET ${fields.join(", ")} WHERE id = ?`,
+      values,
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ message: "User updated" });
   } catch (err) {
     res.status(500).json({ status: "error", message: err.message });
   }
 };
-
-// exports.deleteUser = async (req, res) => {
-//   try {
-//     res.json({ status: "success", infor: "User delete" });
-//   } catch (err) {
-//     res.status(500).json({ status: "error", message: err.message });
-//   }
-// };

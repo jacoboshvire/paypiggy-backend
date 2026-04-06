@@ -21,21 +21,22 @@ const {
 // ROUTES
 // ----------------------
 
-// ✅ Create account
+// Create account
 router.post("/", verifyToken, ukOnlyGeoCheck, fraudCheck, createAccount);
 
-// ✅ Get all accounts
+// Get all accounts
 router.get("/", verifyToken, ukOnlyGeoCheck, getAllAccounts);
 
-// ✅ Get single account
+// Get single account
 router.get("/:id", verifyToken, ukOnlyGeoCheck, getAccountById);
 
-// ✅ Update account
+// Update account
 router.put("/:id", verifyToken, ukOnlyGeoCheck, updateAccount);
 
-// ✅ Delete account
+// Delete account
 router.delete("/:id", verifyToken, ukOnlyGeoCheck, deleteAccount);
 
+//  Deposit money
 router.post("/:id/deposit", verifyToken, ukOnlyGeoCheck, depositMoney);
 
 module.exports = router;

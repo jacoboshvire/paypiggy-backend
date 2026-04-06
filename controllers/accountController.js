@@ -130,10 +130,34 @@ const deleteAccount = async (req, res) => {
   }
 };
 
+//DEPOSIT MONEY - POST /api/accounts/:id/deposit
+const depositMoney = async (req, res) => {
+  try {
+    const { amount } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
+
+    const [result] = await db.query(
+      `UPDATE accounts SET balance = balance + ? WHERE id = ?`,
+      [amount, req.params.id],
+    );
+
+    if (result.affectedRows === 0)
+      return res.status(404).json({ message: "Account not found" });
+
+    res.status(200).json({ message: "Deposit successful" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   createAccount,
   getAllAccounts,
   getAccountById,
   updateAccount,
   deleteAccount,
+  depositMoney,
 };

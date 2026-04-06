@@ -36,4 +36,6 @@ router.put("/:id", verifyToken, ukOnlyGeoCheck, updateAccount);
 // ✅ Delete account
 router.delete("/:id", verifyToken, ukOnlyGeoCheck, deleteAccount);
 
+router.post("/:id/deposit", verifyToken, ukOnlyGeoCheck, depositMoney);
+
 module.exports = router;

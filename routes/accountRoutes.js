@@ -15,6 +15,7 @@ const {
   getAccountById,
   updateAccount,
   deleteAccount,
+  depositMoney,
 } = require("../controllers/accountController");
 
 // ----------------------

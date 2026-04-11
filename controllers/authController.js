@@ -200,3 +200,113 @@ exports.verifyOtp = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// FORGOT PASSWORD — sends OTP
+exports.forgotPassword = async (req, res) => {
+  const { email, channel } = req.body;
+
+  try {
+    const [users] = await db.query("SELECT * FROM users WHERE email = ?", [
+      email,
+    ]);
+
+    if (users.length === 0) {
+      return res.json({
+        message: "If that email exists, an OTP has been sent",
+      });
+    }
+
+    const user = users[0];
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await db.query(
+      "INSERT INTO otps (user_id, otp, channel, expires_at) VALUES (?, ?, ?, ?)",
+      [user.id, otp, channel || "email", expiresAt],
+    );
+
+    if (channel === "sms") {
+      await sendOtpSms(user.phone, otp);
+    } else if (channel === "push") {
+      await sendOtpPush(user.fcm_token, otp);
+    } else {
+      await sendOtpEmail(user.email, otp);
+    }
+
+    res.json({
+      message: "OTP sent",
+      userId: user.id,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// VERIFY OTP FOR PASSWORD RESET
+exports.verifyForgotOtp = async (req, res) => {
+  const { userId, otp } = req.body;
+
+  try {
+    const [rows] = await db.query(
+      `SELECT * FROM otps 
+       WHERE user_id = ? AND otp = ? AND verified = FALSE AND expires_at > NOW()
+       ORDER BY created_at DESC LIMIT 1`,
+      [userId, String(otp)],
+    );
+
+    if (rows.length === 0) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    await db.query("UPDATE otps SET verified = TRUE WHERE id = ?", [
+      rows[0].id,
+    ]);
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+    await db.query(
+      "UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?",
+      [resetToken, expiresAt, userId],
+    );
+
+    res.json({ message: "OTP verified", resetToken });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// RESET PASSWORD
+exports.resetPassword = async (req, res) => {
+  const { resetToken, password } = req.body;
+
+  if (!resetToken || !password) {
+    return res.status(400).json({ message: "Token and password are required" });
+  }
+
+  try {
+    const [users] = await db.query(
+      "SELECT * FROM users WHERE reset_token = ? AND reset_token_expires > NOW()",
+      [resetToken],
+    );
+
+    if (users.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired reset token" });
+    }
+
+    const user = users[0];
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await db.query(
+      "UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?",
+      [hashedPassword, user.id],
+    );
+
+    res.json({ message: "Password reset successful" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

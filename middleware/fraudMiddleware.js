@@ -232,4 +232,5 @@ module.exports = {
   checkVelocity,
   checkAccountAge,
   checkSuspiciousIP,
+  logFraudEvent,
 };

@@ -8,7 +8,13 @@ const { sendOtpEmail, sendOtpSms, sendOtpPush } = require("../utils/sendotp");
 exports.register = async (req, res) => {
   console.log(req.body);
   try {
-    const { fullname, email, password, phone, avatar } = req.body || {};
+    const {
+      fullname,
+      email,
+      password,
+      phone,
+      avatar = `https://res.cloudinary.com/dhyjebn3i/image/upload/q_auto/f_auto/v1774959207/Avatar_ql2szp.png`,
+    } = req.body || {};
 
     if (!fullname || !email || !password || !phone) {
       return res.status(400).json({
@@ -33,16 +39,28 @@ exports.register = async (req, res) => {
 
     const userId = result.insertId;
 
+    // Auto generate account
     const account_number = Math.floor(
       10000000 + Math.random() * 90000000,
     ).toString();
     const part = () => Math.floor(10 + Math.random() * 90);
     const sort_code = `${part()}-${part()}-${part()}`;
 
-    await db.query(
+    const [accountResult] = await db.query(
       `INSERT INTO accounts (user_id, account_number, sort_code, balance, account_type)
        VALUES (?, ?, ?, ?, ?)`,
       [userId, account_number, sort_code, 0.0, "standard"],
+    );
+
+    const accountId = accountResult.insertId;
+
+    // Auto create vault
+    const lockUntil = new Date();
+    lockUntil.setFullYear(lockUntil.getFullYear() + 1); // locked for 1 year by default
+
+    await db.query(
+      "INSERT INTO vaults (user_id, account_id, name, balance, lock_until) VALUES (?, ?, ?, ?, ?)",
+      [userId, accountId, "My Vault", 0.0, lockUntil],
     );
 
     res.status(201).json({
@@ -51,8 +69,6 @@ exports.register = async (req, res) => {
       account: {
         account_number,
         sort_code,
-        first_name: fullname.split(" ")[0],
-        last_name: fullname.split(" ")[1] || "",
         balance: 0.0,
         account_type: "standard",
       },

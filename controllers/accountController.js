@@ -22,8 +22,8 @@ const createAccount = async (req, res) => {
         sort_code,
         0.0,
         account_type ?? "standard",
-        first_name,
-        last_name,
+        first_name ?? null,
+        last_name ?? null,
       ],
     );
 
@@ -43,7 +43,9 @@ const createAccount = async (req, res) => {
 // GET /api/accounts
 const getAllAccounts = async (req, res) => {
   try {
-    const [rows] = await db.query(`SELECT * FROM accounts`);
+    const [rows] = await db.query(`SELECT * FROM accounts WHERE user_id = ?`, [
+      req.user.id,
+    ]);
     res.status(200).json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -71,7 +73,6 @@ const updateAccount = async (req, res) => {
   try {
     const { balance, account_type, first_name, last_name } = req.body;
 
-    // Build query dynamically based on what's provided
     const fields = [];
     const values = [];
 
@@ -100,9 +101,10 @@ const updateAccount = async (req, res) => {
     }
 
     values.push(req.params.id);
+    values.push(req.user.id); // add user ownership check
 
     const [result] = await db.query(
-      `UPDATE accounts SET ${fields.join(", ")} WHERE id = ?`,
+      `UPDATE accounts SET ${fields.join(", ")} WHERE id = ? AND user_id = ?`,
       values,
     );
 

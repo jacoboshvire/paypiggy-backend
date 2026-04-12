@@ -1,6 +1,7 @@
 /** @format */
 const db = require("../config/db");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { generateOTP } = require("../utils/otpUtils");
 const { sendOtpEmail, sendOtpSms, sendOtpPush } = require("../utils/sendotp");

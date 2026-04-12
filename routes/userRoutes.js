@@ -13,8 +13,5 @@ const {
 router.get("/", getUsers);
 router.get("/:id", getUserById);
 router.put("/:id", updateUser);
-router.post("/forgot-password", forgotPassword);
-router.post("/verify-forgot-otp", verifyForgotOtp);
-router.post("/reset-password", resetPassword);
 
 module.exports = router;

@@ -57,6 +57,11 @@ exports.transferMoney = async (req, res) => {
     });
   }
 
+  // Split name
+  const nameParts = toName.trim().split(" ");
+  const firstName = nameParts[0];
+  const lastName = nameParts.slice(1).join(" ");
+
   const connection = await db.getConnection();
 
   try {
@@ -71,15 +76,15 @@ exports.transferMoney = async (req, res) => {
     if (sender.length === 0) throw new Error("Sender account not found");
     if (sender[0].balance < amount) throw new Error("Insufficient balance");
 
-    // 2. Find receiver by account number, sort code and name
+    // 2. Find receiver by account number, sort code, first and last name
     const [receiver] = await connection.query(
-      `SELECT a.id, a.user_id, u.name 
+      `SELECT a.id, a.user_id, a.first_name, a.last_name 
        FROM accounts a
-       JOIN users u ON a.user_id = u.id
        WHERE a.account_number = ? 
        AND a.sort_code = ?
-       AND LOWER(u.name) = LOWER(?)`,
-      [toAccountNumber, toSortCode, toName],
+       AND LOWER(a.first_name) = LOWER(?)
+       AND LOWER(a.last_name) = LOWER(?)`,
+      [toAccountNumber, toSortCode, firstName, lastName],
     );
 
     if (receiver.length === 0) {
@@ -127,10 +132,11 @@ exports.transferMoney = async (req, res) => {
     // 7. Notify both users
     const senderUserId = sender[0].user_id;
     const receiverUserId = receiver[0].user_id;
+    const recipientName = `${receiver[0].first_name} ${receiver[0].last_name}`;
 
     await notifyUser(
       senderUserId,
-      `You sent £${amount} to ${receiver[0].name}. Reference: ${reference}`,
+      `You sent £${amount} to ${recipientName}. Reference: ${reference}`,
     );
     await notifyUser(
       receiverUserId,
@@ -140,7 +146,7 @@ exports.transferMoney = async (req, res) => {
     res.json({
       message: "Transfer successful",
       reference,
-      recipient: receiver[0].name,
+      recipient: recipientName,
     });
   } catch (err) {
     await connection.rollback();

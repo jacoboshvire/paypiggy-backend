@@ -261,4 +261,6 @@ module.exports = {
   checkAccountAge,
   checkSuspiciousIP,
   logFraudEvent,
+  checkUserAge,
+  checkAddress,
 };

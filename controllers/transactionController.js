@@ -64,6 +64,29 @@ exports.transferMoney = async (req, res) => {
 
   const connection = await db.getConnection();
 
+  // After fraud middleware passes
+  if (req.requiresOtp) {
+    // Send OTP to user
+    const [users] = await db.query("SELECT * FROM users WHERE id = ?", [
+      req.user.id,
+    ]);
+    const user = users[0];
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await db.query(
+      "INSERT INTO otps (user_id, otp, channel, expires_at) VALUES (?, ?, ?, ?)",
+      [req.user.id, otp, "email", expiresAt],
+    );
+
+    await sendOtpEmail(user.email, otp);
+
+    return res.status(403).json({
+      message: "OTP required for this transaction",
+      requiresOtp: true,
+    });
+  }
+
   try {
     await connection.beginTransaction();
 

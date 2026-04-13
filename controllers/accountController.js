@@ -71,7 +71,18 @@ const getAccountById = async (req, res) => {
 // PUT /api/account/:id
 const updateAccount = async (req, res) => {
   try {
-    const { balance, account_type, first_name, last_name } = req.body;
+    const {
+      balance,
+      account_type,
+      first_name,
+      last_name,
+      date_of_birth,
+      address_line1,
+      address_line2,
+      city,
+      postcode,
+      country,
+    } = req.body;
 
     const fields = [];
     const values = [];
@@ -80,20 +91,41 @@ const updateAccount = async (req, res) => {
       fields.push("balance = ?");
       values.push(balance);
     }
-
     if (account_type !== undefined && account_type !== "") {
       fields.push("account_type = ?");
       values.push(account_type);
     }
-
     if (first_name !== undefined && first_name !== "") {
       fields.push("first_name = ?");
       values.push(first_name);
     }
-
     if (last_name !== undefined && last_name !== "") {
       fields.push("last_name = ?");
       values.push(last_name);
+    }
+    if (date_of_birth !== undefined && date_of_birth !== "") {
+      fields.push("date_of_birth = ?");
+      values.push(date_of_birth);
+    }
+    if (address_line1 !== undefined && address_line1 !== "") {
+      fields.push("address_line1 = ?");
+      values.push(address_line1);
+    }
+    if (address_line2 !== undefined && address_line2 !== "") {
+      fields.push("address_line2 = ?");
+      values.push(address_line2);
+    }
+    if (city !== undefined && city !== "") {
+      fields.push("city = ?");
+      values.push(city);
+    }
+    if (postcode !== undefined && postcode !== "") {
+      fields.push("postcode = ?");
+      values.push(postcode);
+    }
+    if (country !== undefined && country !== "") {
+      fields.push("country = ?");
+      values.push(country);
     }
 
     if (fields.length === 0) {
@@ -101,7 +133,7 @@ const updateAccount = async (req, res) => {
     }
 
     values.push(req.params.id);
-    values.push(req.user.id); // add user ownership check
+    values.push(req.user.id);
 
     const [result] = await db.query(
       `UPDATE accounts SET ${fields.join(", ")} WHERE id = ? AND user_id = ?`,
@@ -116,6 +148,7 @@ const updateAccount = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
 // DELETE /api/accounts/:id
 const deleteAccount = async (req, res) => {
   try {

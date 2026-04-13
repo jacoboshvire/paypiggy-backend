@@ -12,6 +12,8 @@ const FRAUD_RULES = {
   MAX_TRANSACTIONS_PER_MINUTE: 5,
   LARGE_AMOUNT_THRESHOLD: 10000,
   MIN_ACCOUNT_AGE_DAYS: 0,
+  MIN_USER_AGE: 18, // minimum age to transact
+  REQUIRE_ADDRESS: true, // block transactions if no address
 };
 
 // ----------------------

@@ -44,7 +44,8 @@ const notifyUser = async (userId, message) => {
 };
 
 exports.transferMoney = async (req, res) => {
-  const { fromAccount, toAccountNumber, toSortCode, toName, amount } = req.body;
+  const { fromAccount, toAccountNumber, toSortCode, toName, amount, otp } =
+    req.body;
 
   if (!fromAccount || !toAccountNumber || !toSortCode || !toName || !amount) {
     return res.status(400).json({ message: "Missing fields" });
@@ -62,30 +63,47 @@ exports.transferMoney = async (req, res) => {
   const firstName = nameParts[0];
   const lastName = nameParts.slice(1).join(" ");
 
-  const connection = await db.getConnection();
-
-  // After fraud middleware passes
-  if (req.requiresOtp) {
-    // Send OTP to user
+  // If OTP required but not provided — send OTP
+  if (req.requiresOtp && !otp) {
     const [users] = await db.query("SELECT * FROM users WHERE id = ?", [
       req.user.id,
     ]);
     const user = users[0];
-    const otp = generateOTP();
+    const generatedOtp = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await db.query(
       "INSERT INTO otps (user_id, otp, channel, expires_at) VALUES (?, ?, ?, ?)",
-      [req.user.id, otp, "email", expiresAt],
+      [req.user.id, generatedOtp, "email", expiresAt],
     );
 
-    await sendOtpEmail(user.email, otp);
+    await sendOtpEmail(user.email, generatedOtp);
 
     return res.status(403).json({
       message: "OTP required for this transaction",
       requiresOtp: true,
     });
   }
+
+  // If OTP provided — verify it
+  if (otp) {
+    const [rows] = await db.query(
+      `SELECT * FROM otps 
+       WHERE user_id = ? AND otp = ? AND verified = FALSE AND expires_at > NOW()
+       ORDER BY created_at DESC LIMIT 1`,
+      [req.user.id, String(otp)],
+    );
+
+    if (rows.length === 0) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    await db.query("UPDATE otps SET verified = TRUE WHERE id = ?", [
+      rows[0].id,
+    ]);
+  }
+
+  const connection = await db.getConnection();
 
   try {
     await connection.beginTransaction();

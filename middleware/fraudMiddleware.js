@@ -228,6 +228,32 @@ const fraudCheck = async (req, res, next) => {
   }
 };
 
+// AGE CHECK
+const checkUserAge = async (userId) => {
+  const [rows] = await db.query(
+    "SELECT date_of_birth FROM accounts WHERE user_id = ?",
+    [userId],
+  );
+
+  if (rows.length === 0 || !rows[0].date_of_birth) return true;
+
+  const dob = new Date(rows[0].date_of_birth);
+  const age = Math.floor((Date.now() - dob) / (1000 * 60 * 60 * 24 * 365.25));
+
+  return age < FRAUD_RULES.MIN_USER_AGE;
+};
+
+// ADDRESS CHECK
+const checkAddress = async (userId) => {
+  const [rows] = await db.query(
+    "SELECT address_line1, postcode FROM accounts WHERE user_id = ?",
+    [userId],
+  );
+
+  if (rows.length === 0) return true;
+  return !rows[0].address_line1 || !rows[0].postcode;
+};
+
 module.exports = {
   fraudCheck,
   validateTransfer,

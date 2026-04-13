@@ -254,6 +254,20 @@ const checkAddress = async (userId) => {
   return !rows[0].address_line1 || !rows[0].postcode;
 };
 
+// AGE RESTRICTED AMOUNT CHECK
+const checkAgeRestrictedAmount = async (userId, amount) => {
+  const [rows] = await db.query(
+    "SELECT date_of_birth FROM accounts WHERE user_id = ?",
+    [userId],
+  );
+
+  if (rows.length === 0 || !rows[0].date_of_birth) return false;
+
+  const dob = new Date(rows[0].date_of_birth);
+  const age = Math.floor((Date.now() - dob) / (1000 * 60 * 60 * 24 * 365.25));
+
+  return age < 18 && amount >= 500;
+};
 module.exports = {
   fraudCheck,
   validateTransfer,

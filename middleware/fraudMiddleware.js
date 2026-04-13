@@ -268,6 +268,7 @@ const checkAgeRestrictedAmount = async (userId, amount) => {
 
   return age < 18 && amount >= 500;
 };
+
 module.exports = {
   fraudCheck,
   validateTransfer,
@@ -277,4 +278,5 @@ module.exports = {
   logFraudEvent,
   checkUserAge,
   checkAddress,
+  checkAgeRestrictedAmount,
 };

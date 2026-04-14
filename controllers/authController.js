@@ -94,11 +94,64 @@ exports.login = async (req, res) => {
     }
 
     const user = users[0];
+
+    // Check if user is suspended
+    if (user.suspended_until && new Date(user.suspended_until) > new Date()) {
+      const remaining = Math.ceil(
+        (new Date(user.suspended_until) - new Date()) / 1000 / 60,
+      );
+      return res.status(403).json({
+        message: `Account suspended. Try again in ${remaining} minute(s).`,
+        suspended: true,
+        suspended_until: user.suspended_until,
+      });
+    }
+
+    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      const attempts = user.login_attempts + 1;
+
+      if (attempts >= 10) {
+        // Suspend for 5 minutes
+        const suspendedUntil = new Date(Date.now() + 5 * 60 * 1000);
+
+        await db.query(
+          "UPDATE users SET login_attempts = ?, suspended_until = ? WHERE id = ?",
+          [attempts, suspendedUntil, user.id],
+        );
+
+        // Notify user
+        await sendTransactionEmail(
+          user.email,
+          `Your PayPiggy account has been suspended for 5 minutes due to too many failed login attempts. If this was not you, please reset your password immediately.`,
+        );
+
+        return res.status(403).json({
+          message: "Too many failed attempts. Account suspended for 5 minutes.",
+          suspended: true,
+          suspended_until: suspendedUntil,
+        });
+      }
+
+      // Increment attempts
+      await db.query("UPDATE users SET login_attempts = ? WHERE id = ?", [
+        attempts,
+        user.id,
+      ]);
+
+      return res.status(401).json({
+        message: "Invalid credentials",
+        attempts_remaining: 10 - attempts,
+      });
     }
+
+    // Successful login — reset attempts
+    await db.query(
+      "UPDATE users SET login_attempts = 0, suspended_until = NULL WHERE id = ?",
+      [user.id],
+    );
 
     res.json({
       message: "Login successful. Please verify with OTP.",

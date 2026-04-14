@@ -146,7 +146,7 @@ exports.login = async (req, res) => {
         attempts_remaining: 10 - attempts,
       });
     }
-
+    console.log("Sending response:", responseData);
     // Successful login — reset attempts
     await db.query(
       "UPDATE users SET login_attempts = 0, suspended_until = NULL WHERE id = ?",

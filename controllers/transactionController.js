@@ -19,22 +19,30 @@ const generateReference = () => {
 // Notify user via all channels
 const notifyUser = async (userId, message) => {
   try {
+    console.log("notifyUser called for userId:", userId);
     const [users] = await db.query(
       "SELECT email, phone, fcm_token FROM users WHERE id = ?",
       [userId],
     );
 
-    if (users.length === 0) return;
+    if (users.length === 0) {
+      console.log("No user found for id:", userId);
+      return;
+    }
+
     const user = users[0];
+    console.log("Sending notification to:", user.email);
 
     // Email
     if (user.email) {
       await sendTransactionEmail(user.email, message);
+      console.log("Email sent to:", user.email);
     }
 
     // SMS
     if (user.phone) {
       await sendTransactionSms(user.phone, message);
+      console.log("SMS sent to:", user.phone);
     }
 
     // Push
@@ -43,6 +51,7 @@ const notifyUser = async (userId, message) => {
         token: user.fcm_token,
         notification: { title: "Transaction Alert", body: message },
       });
+      console.log("Push sent to fcm_token:", user.fcm_token);
     }
   } catch (err) {
     console.error("Notification error:", err.message);

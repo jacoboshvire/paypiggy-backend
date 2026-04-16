@@ -10,6 +10,8 @@ const {
   resetPassword,
 } = require("../controllers/userController");
 
+router.use(express.urlencoded({ extended: true }));
+
 router.get("/", getUsers);
 router.get("/:id", getUserById);
 router.put("/:id", upload.single("avatar"), updateUser);

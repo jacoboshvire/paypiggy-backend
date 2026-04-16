@@ -59,9 +59,12 @@ exports.transferMoney = async (req, res) => {
   }
 
   // Split name
-  const nameParts = toName.trim().split(" ");
+  const nameParts = toName
+    .trim()
+    .split(" ")
+    .filter((part) => part !== "");
   const firstName = nameParts[0];
-  const lastName = nameParts.slice(1).join(" ");
+  const lastName = nameParts.slice(1).join(" ").trim();
 
   console.log("Looking for:");
   console.log("Account number:", toAccountNumber);

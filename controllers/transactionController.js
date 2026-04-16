@@ -241,7 +241,8 @@ exports.getTransactionHistory = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    /let query = `
+    // 2. Build query dynamically
+    let query = `
   SELECT 
     le.id,
     le.type,

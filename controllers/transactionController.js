@@ -133,11 +133,11 @@ exports.transferMoney = async (req, res) => {
     // 2. Find receiver by account number, sort code, first and last name
     const [receiver] = await connection.query(
       `SELECT a.id, a.user_id, a.first_name, a.last_name 
-       FROM accounts a
-       WHERE a.account_number = ? 
-       AND a.sort_code = ?
-       AND LOWER(a.first_name) = LOWER(?)
-       AND LOWER(a.last_name) = LOWER(?)`,
+      FROM accounts a
+      WHERE a.account_number = ? 
+      AND a.sort_code = ?
+      AND LOWER(TRIM(a.first_name)) = LOWER(?)
+      AND LOWER(TRIM(a.last_name)) = LOWER(?)`,
       [toAccountNumber, toSortCode, firstName, lastName],
     );
 

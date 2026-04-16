@@ -4,6 +4,13 @@ const db = require("../config/db");
 const admin = require("../utils/firebase");
 const { sendOtpEmail, sendOtpSms } = require("../utils/sendotp");
 const crypto = require("crypto");
+const {
+  sendOtpEmail,
+  sendOtpSms,
+  sendTransactionEmail,
+  sendTransactionSms,
+} = require("../utils/sendotp");
+const { generateOTP } = require("../utils/otpUtils");
 
 // Generate unique reference number
 const generateReference = () => {

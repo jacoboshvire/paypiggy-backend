@@ -63,6 +63,11 @@ exports.transferMoney = async (req, res) => {
   const firstName = nameParts[0];
   const lastName = nameParts.slice(1).join(" ");
 
+  console.log("Looking for:");
+  console.log("Account number:", toAccountNumber);
+  console.log("Sort code:", toSortCode);
+  console.log("First name:", firstName);
+  console.log("Last name:", lastName);
   // If OTP required but not provided — send OTP
   if (req.requiresOtp && !otp) {
     const [users] = await db.query("SELECT * FROM users WHERE id = ?", [

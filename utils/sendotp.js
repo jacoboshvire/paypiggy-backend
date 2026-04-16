@@ -61,4 +61,34 @@ const sendOtpPush = async (fcmToken, otp) => {
   });
 };
 
-module.exports = { sendOtpEmail, sendOtpSms, sendOtpPush };
+// Transaction Email
+const sendTransactionEmail = async (email, message) => {
+  await mailjet.post("send", { version: "v3.1" }).request({
+    Messages: [
+      {
+        From: { Email: process.env.MAILJET_FROM_EMAIL, Name: "PayPiggy" },
+        To: [{ Email: email }],
+        Subject: "Transaction Alert",
+        TextPart: message,
+      },
+    ],
+  });
+};
+
+// Transaction SMS
+const sendTransactionSms = async (phone, message) => {
+  const formattedPhone = formatPhone(phone);
+  await twilioClient.messages.create({
+    body: message,
+    from: process.env.TWILIO_PHONE_NUMBER,
+    to: formattedPhone,
+  });
+};
+
+module.exports = {
+  sendOtpEmail,
+  sendOtpSms,
+  sendOtpPush,
+  sendTransactionEmail,
+  sendTransactionSms,
+};

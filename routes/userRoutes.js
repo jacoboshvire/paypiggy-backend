@@ -5,10 +5,8 @@ const {
   getUsers,
   getUserById,
   updateUser,
-  forgotPassword,
-  verifyForgotOtp,
-  resetPassword,
 } = require("../controllers/userController");
+const { upload } = require("../config/cloudinary");
 
 router.use(express.urlencoded({ extended: true }));
 

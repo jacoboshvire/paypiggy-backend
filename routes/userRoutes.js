@@ -12,6 +12,6 @@ const {
 
 router.get("/", getUsers);
 router.get("/:id", getUserById);
-router.put("/:id", updateUser);
+router.put("/:id", upload.single("avatar"), updateUser);
 
 module.exports = router;

@@ -32,7 +32,7 @@ exports.getUserById = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    const { name, phone } = req.body;
+    const { name, phone, avatar } = req.body;
 
     const fields = [];
     const values = [];
@@ -47,10 +47,15 @@ exports.updateUser = async (req, res) => {
       values.push(phone);
     }
 
+    if (avatar !== undefined && avatar !== "") {
+      fields.push("avatar = ?");
+      values.push(avatar);
+    }
+
     // If image uploaded via multer
     if (req.file) {
       fields.push("avatar = ?");
-      values.push(req.file.path); // cloudinary URL
+      values.push(req.file.path);
     }
 
     if (fields.length === 0) {
@@ -70,7 +75,7 @@ exports.updateUser = async (req, res) => {
 
     res.json({
       message: "User updated",
-      avatar: req.file ? req.file.path : null,
+      avatar: req.file ? req.file.path : avatar || null,
     });
   } catch (err) {
     res.status(500).json({ status: "error", message: err.message });

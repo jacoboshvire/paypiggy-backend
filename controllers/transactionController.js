@@ -2,7 +2,6 @@
 
 const db = require("../config/db");
 const admin = require("../utils/firebase");
-const { sendOtpEmail, sendOtpSms } = require("../utils/sendotp");
 const crypto = require("crypto");
 const {
   sendOtpEmail,

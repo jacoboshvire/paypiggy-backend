@@ -97,11 +97,12 @@ const updateAccount = async (req, res) => {
     }
     if (first_name !== undefined && first_name !== "") {
       fields.push("first_name = ?");
-      values.push(first_name);
+      values.push(first_name.trim());
     }
+
     if (last_name !== undefined && last_name !== "") {
       fields.push("last_name = ?");
-      values.push(last_name);
+      values.push(last_name.trim());
     }
     if (date_of_birth !== undefined && date_of_birth !== "") {
       fields.push("date_of_birth = ?");

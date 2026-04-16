@@ -243,36 +243,36 @@ exports.getTransactionHistory = async (req, res) => {
 
     // 2. Build query dynamically
     let query = `
-  SELECT 
-    le.id,
-    le.type,
-    le.amount,
-    le.created_at,
-    t.reference,
-    CASE 
-      WHEN le.type = 'debit' THEN receiver_acc.first_name
-      WHEN le.type = 'credit' THEN sender_acc.first_name
-    END as other_first_name,
-    CASE 
-      WHEN le.type = 'debit' THEN receiver_acc.last_name
-      WHEN le.type = 'credit' THEN sender_acc.last_name
-    END as other_last_name,
-    CASE 
-      WHEN le.type = 'debit' THEN receiver_user.avatar
-      WHEN le.type = 'credit' THEN sender_user.avatar
-    END as other_avatar,
-    CASE 
-      WHEN le.type = 'debit' THEN receiver_user.name
-      WHEN le.type = 'credit' THEN sender_user.name
-    END as other_name
-  FROM ledger_entries le
-  JOIN transactions t ON le.transaction_id = t.id
-  JOIN accounts sender_acc ON t.from_account = sender_acc.id
-  JOIN accounts receiver_acc ON t.to_account = receiver_acc.id
-  JOIN users sender_user ON sender_acc.user_id = sender_user.id
-  JOIN users receiver_user ON receiver_acc.user_id = receiver_user.id
-  WHERE le.account_id = ?
-`;
+      SELECT 
+        le.id,
+        le.type,
+        le.amount,
+        le.created_at,
+        t.reference,
+        CASE 
+          WHEN le.type = 'debit' THEN receiver_acc.first_name
+          WHEN le.type = 'credit' THEN sender_acc.first_name
+        END as other_first_name,
+        CASE 
+          WHEN le.type = 'debit' THEN receiver_acc.last_name
+          WHEN le.type = 'credit' THEN sender_acc.last_name
+        END as other_last_name,
+        CASE 
+          WHEN le.type = 'debit' THEN receiver_user.avatar
+          WHEN le.type = 'credit' THEN sender_user.avatar
+        END as other_avatar,
+        CASE 
+          WHEN le.type = 'debit' THEN receiver_user.name
+          WHEN le.type = 'credit' THEN sender_user.name
+        END as other_name
+      FROM ledger_entries le
+      JOIN transactions t ON le.transaction_id = t.id
+      JOIN accounts sender_acc ON t.from_account = sender_acc.id
+      JOIN accounts receiver_acc ON t.to_account = receiver_acc.id
+      JOIN users sender_user ON sender_acc.user_id = sender_user.id
+      JOIN users receiver_user ON receiver_acc.user_id = receiver_user.id
+      WHERE le.account_id = ?
+    `;
 
     const params = [accountId];
 

@@ -104,6 +104,7 @@ const updateAccount = async (req, res) => {
       fields.push("last_name = ?");
       values.push(last_name.trim());
     }
+
     if (date_of_birth !== undefined && date_of_birth !== "") {
       fields.push("date_of_birth = ?");
       values.push(date_of_birth);

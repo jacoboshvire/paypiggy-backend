@@ -16,6 +16,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.get("/", (res) => {
+  res.send("Hello from PayPiggy Backend!");
+});
+
 app.use("/api/vault", vaultRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/account", accountRoutes);

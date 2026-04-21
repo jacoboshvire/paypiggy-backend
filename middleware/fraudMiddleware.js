@@ -12,8 +12,9 @@ const FRAUD_RULES = {
   MAX_TRANSACTIONS_PER_MINUTE: 5,
   LARGE_AMOUNT_THRESHOLD: 10000,
   MIN_ACCOUNT_AGE_DAYS: 0,
-  MIN_USER_AGE: 18, // minimum age to transact
-  REQUIRE_ADDRESS: true, // block transactions if no address
+  MIN_USER_AGE: 18,
+  REQUIRE_ADDRESS: true,
+  AGE_RESTRICTED_AMOUNT: 500,
 };
 
 // ----------------------
@@ -22,37 +23,34 @@ const FRAUD_RULES = {
 const notifyFraudAlert = async (userId, reason) => {
   try {
     const [users] = await db.query(
-      "SELECT email, phone, fcm_token, full_name FROM users WHERE id = ?",
+      "SELECT email, phone, fcm_token, name FROM users WHERE id = ?",
       [userId],
     );
 
     if (users.length === 0) return;
     const user = users[0];
 
-    const message = `Security Alert for ${user.full_name}: Your transaction was flagged — ${reason}. If this wasn't you, please contact support immediately.`;
+    const message = `Security Alert for ${user.name}: Your transaction was flagged — ${reason}. If this wasn't you, please contact support immediately.`;
 
-    // Email
     if (user.email) {
       await sendTransactionEmail(user.email, message).catch((err) =>
         console.error("Email alert failed:", err.message),
       );
     }
 
-    // SMS
     if (user.phone) {
       await sendTransactionSms(user.phone, message).catch((err) =>
         console.error("SMS alert failed:", err.message),
       );
     }
 
-    // Push
     if (user.fcm_token) {
       await admin
         .messaging()
         .send({
           token: user.fcm_token,
           notification: {
-            title: "🚨 Security Alert",
+            title: "Security Alert",
             body: message,
           },
           data: { type: "fraud_alert", reason },
@@ -146,6 +144,53 @@ const logFraudEvent = async (userId, reason, ip, amount) => {
 };
 
 // ----------------------
+// USER AGE CHECK
+// ----------------------
+const checkUserAge = async (userId) => {
+  const [rows] = await db.query(
+    "SELECT date_of_birth FROM accounts WHERE user_id = ?",
+    [userId],
+  );
+
+  if (rows.length === 0 || !rows[0].date_of_birth) return false;
+
+  const dob = new Date(rows[0].date_of_birth);
+  const age = Math.floor((Date.now() - dob) / (1000 * 60 * 60 * 24 * 365.25));
+
+  return age < FRAUD_RULES.MIN_USER_AGE;
+};
+
+// ----------------------
+// ADDRESS CHECK
+// ----------------------
+const checkAddress = async (userId) => {
+  const [rows] = await db.query(
+    "SELECT address_line1, postcode FROM accounts WHERE user_id = ?",
+    [userId],
+  );
+
+  if (rows.length === 0) return true;
+  return !rows[0].address_line1 || !rows[0].postcode;
+};
+
+// ----------------------
+// AGE RESTRICTED AMOUNT CHECK
+// ----------------------
+const checkAgeRestrictedAmount = async (userId, amount) => {
+  const [rows] = await db.query(
+    "SELECT date_of_birth FROM accounts WHERE user_id = ?",
+    [userId],
+  );
+
+  if (rows.length === 0 || !rows[0].date_of_birth) return false;
+
+  const dob = new Date(rows[0].date_of_birth);
+  const age = Math.floor((Date.now() - dob) / (1000 * 60 * 60 * 24 * 365.25));
+
+  return age < 18 && amount >= FRAUD_RULES.AGE_RESTRICTED_AMOUNT;
+};
+
+// ----------------------
 // MAIN FRAUD CHECK
 // ----------------------
 const fraudCheck = async (req, res, next) => {
@@ -156,7 +201,6 @@ const fraudCheck = async (req, res, next) => {
     const ip =
       req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-    // Helper to block + notify + log
     const blockTransaction = async (statusCode, message, reason) => {
       await Promise.all([
         notifyFraudAlert(userId, reason),
@@ -201,7 +245,22 @@ const fraudCheck = async (req, res, next) => {
       );
     }
 
-    // 5. Risk scoring
+    // 5. Age restricted amount — require OTP if under 18 and amount >= 500
+    if (await checkAgeRestrictedAmount(userId, amount)) {
+      req.requiresOtp = true;
+      return next();
+    }
+
+    // 6. User age check — block completely if under 18 and amount < 500
+    if (await checkUserAge(userId)) {
+      return await blockTransaction(
+        403,
+        "Transaction blocked",
+        "User does not meet minimum age requirement",
+      );
+    }
+
+    // 7. Risk scoring
     const { risk, reasons } = await calculateRisk({ userId, amount });
 
     req.fraud = { risk, reasons };
@@ -228,47 +287,6 @@ const fraudCheck = async (req, res, next) => {
   }
 };
 
-// AGE CHECK
-const checkUserAge = async (userId) => {
-  const [rows] = await db.query(
-    "SELECT date_of_birth FROM accounts WHERE user_id = ?",
-    [userId],
-  );
-
-  if (rows.length === 0 || !rows[0].date_of_birth) return true;
-
-  const dob = new Date(rows[0].date_of_birth);
-  const age = Math.floor((Date.now() - dob) / (1000 * 60 * 60 * 24 * 365.25));
-
-  return age < FRAUD_RULES.MIN_USER_AGE;
-};
-
-// ADDRESS CHECK
-const checkAddress = async (userId) => {
-  const [rows] = await db.query(
-    "SELECT address_line1, postcode FROM accounts WHERE user_id = ?",
-    [userId],
-  );
-
-  if (rows.length === 0) return true;
-  return !rows[0].address_line1 || !rows[0].postcode;
-};
-
-// AGE RESTRICTED AMOUNT CHECK
-const checkAgeRestrictedAmount = async (userId, amount) => {
-  const [rows] = await db.query(
-    "SELECT date_of_birth FROM accounts WHERE user_id = ?",
-    [userId],
-  );
-
-  if (rows.length === 0 || !rows[0].date_of_birth) return false;
-
-  const dob = new Date(rows[0].date_of_birth);
-  const age = Math.floor((Date.now() - dob) / (1000 * 60 * 60 * 24 * 365.25));
-
-  return age < 18 && amount >= 500;
-};
-
 module.exports = {
   fraudCheck,
   validateTransfer,
@@ -279,4 +297,5 @@ module.exports = {
   checkUserAge,
   checkAddress,
   checkAgeRestrictedAmount,
+  notifyFraudAlert,
 };

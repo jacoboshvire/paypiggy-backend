@@ -8,6 +8,7 @@ const accountRoutes = require("./routes/accountRoutes");
 const transactionRoutes = require("./routes/transactionRoutes");
 const authRoutes = require("./routes/authRoutes");
 const vaultRoutes = require("./routes/vaultRoutes");
+const settingsRoutes = require("./routes/settingsRoutes");
 
 const app = express();
 
@@ -20,5 +21,6 @@ app.use("/api/users", userRoutes);
 app.use("/api/account", accountRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/transaction", transactionRoutes);
+app.use("/api/settings", settingsRoutes);
 
 module.exports = app;

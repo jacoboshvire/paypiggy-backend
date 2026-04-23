@@ -14,13 +14,23 @@ const app = express();
 
 app.use(
   cors({
-    origin: [
-      "https://your-frontend.vercel.app",
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "https://paypiggy-backend-g1yderpie-jacoboshvires-projects.vercel.app",
-      "https://paypiggy-backend-jacoboshvires-projects.vercel.app",
-    ],
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        "https://your-actual-frontend-url.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:3001",
+      ];
+
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".vercel.app")
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

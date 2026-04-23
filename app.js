@@ -19,6 +19,7 @@ app.use(
       "http://localhost:3000",
       "http://localhost:3001",
       "https://paypiggy-backend-jacoboshvires-projects.vercel.app/",
+      "https://paypiggy-backend-jacoboshvires-projects.vercel.app/",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

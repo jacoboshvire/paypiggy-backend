@@ -16,7 +16,7 @@ app.use(
   cors({
     origin: function (origin, callback) {
       const allowedOrigins = [
-        "https://your-actual-frontend-url.vercel.app",
+        "https://pay-piggy.vercel.app",
         "http://localhost:3000",
         "http://localhost:3001",
       ];

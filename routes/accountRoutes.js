@@ -23,48 +23,21 @@ const {
 // ----------------------
 
 // Create account
-router.post(
-  "/",
-  // verifyToken,
-  ukOnlyGeoCheck,
-  fraudCheck,
-  createAccount,
-);
+router.post("/", verifyToken, ukOnlyGeoCheck, fraudCheck, createAccount);
 
 // Get all accounts
-router.get(
-  "/",
-  verifyToken,
-  // ukOnlyGeoCheck,
-  getAllAccounts,
-);
+router.get("/", verifyToken, ukOnlyGeoCheck, getAllAccounts);
 
 // Get single account
-router.get(
-  "/:id",
-  verifyToken, // ukOnlyGeoCheck,
-  getAccountById,
-);
+router.get("/:id", verifyToken, ukOnlyGeoCheck, getAccountById);
 
 // Update account
-router.put(
-  "/:id",
-  verifyToken, // ukOnlyGeoCheck,
-  updateAccount,
-);
+router.put("/:id", verifyToken, ukOnlyGeoCheck, updateAccount);
 
 // Delete account
-router.delete(
-  "/:id",
-  verifyToken, // ukOnlyGeoCheck,
-  deleteAccount,
-);
+router.delete("/:id", verifyToken, ukOnlyGeoCheck, deleteAccount);
 
 //  Deposit money
-router.post(
-  "/:id/deposit",
-  verifyToken, // ukOnlyGeoCheck,
-  depositMoney,
-);
+router.post("/:id/deposit", verifyToken, ukOnlyGeoCheck, depositMoney);
 
 module.exports = router;

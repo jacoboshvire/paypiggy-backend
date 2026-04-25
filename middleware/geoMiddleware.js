@@ -19,6 +19,10 @@ const getClientIP = (req) => {
 
 const ukOnlyGeoCheck = async (req, res, next) => {
   const ip = getClientIP(req);
+  // Skip geo check in production on Vercel
+  if (process.env.VERCEL) {
+    return next();
+  }
 
   // Allow localhost/internal IPs (dev environment)
   if (WHITELISTED_IPS.includes(ip)) {

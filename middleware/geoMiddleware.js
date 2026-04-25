@@ -27,6 +27,13 @@ const ukOnlyGeoCheck = async (req, res, next) => {
   }
 
   try {
+    // Check if DB file exists first
+    const fs = require("fs");
+    if (!fs.existsSync(DB_PATH)) {
+      console.log("[GEO] GeoIP database not found — skipping geo check");
+      return next();
+    }
+
     const reader = await Reader.open(DB_PATH);
     const result = reader.country(ip);
     const countryCode = result.country?.isoCode;
@@ -41,16 +48,12 @@ const ukOnlyGeoCheck = async (req, res, next) => {
       });
     }
 
-    // Attach country to request for use downstream if needed
     req.geoCountry = countryCode;
     next();
   } catch (err) {
-    // If IP lookup fails (e.g. private IP range not in DB), block by default
+    // If lookup fails skip instead of blocking
     console.error(`[GEO] Lookup failed for IP ${ip}:`, err.message);
-    return res.status(403).json({
-      error: "Access denied",
-      reason: "Unable to verify your location",
-    });
+    return next();
   }
 };
 

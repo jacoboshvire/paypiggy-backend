@@ -40,7 +40,7 @@ const ukOnlyGeoCheck = async (req, res, next) => {
     const result = reader.country(ip);
     const countryCode = result.country?.isoCode;
 
-    if (countryCode !== "GB") {
+    if (countryCode !== "US") {
       return res.status(403).json({
         error: "Access denied",
         reason: "This service is only available in the United Kingdom",

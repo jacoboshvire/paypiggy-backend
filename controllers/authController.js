@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { generateOTP } = require("../utils/otpUtils");
+const { sendNotification } = require("../controllers/notificationController");
 const {
   sendOtpEmail,
   sendOtpWhatsApp,

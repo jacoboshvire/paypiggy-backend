@@ -4,7 +4,11 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { generateOTP } = require("../utils/otpUtils");
-const { sendOtpEmail, sendOtpSms, sendOtpPush } = require("../utils/sendotp");
+const {
+  sendOtpEmail,
+  sendOtpWhatsApp,
+  sendOtpPush,
+} = require("../utils/sendotp");
 
 exports.register = async (req, res) => {
   console.log(req.body);
@@ -165,7 +169,6 @@ exports.login = async (req, res) => {
 // SEND OTP
 exports.sendOtp = async (req, res) => {
   const { userId, channel, phone, fcmToken } = req.body;
-  // channel: 'email' | 'sms' | 'push'
 
   try {
     const [users] = await db.query("SELECT * FROM users WHERE id = ?", [
@@ -178,18 +181,13 @@ exports.sendOtp = async (req, res) => {
 
     const user = users[0];
     const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    console.log("User object:", user);
-    console.log("Email:", user.email);
-
-    // Save OTP to DB
     await db.query(
       "INSERT INTO otps (user_id, otp, channel, expires_at) VALUES (?, ?, ?, ?)",
       [userId, otp, channel, expiresAt],
     );
 
-    // Send via chosen channel
     if (channel === "email") {
       await sendOtpEmail(user.email, otp);
     } else if (channel === "sms") {
@@ -197,10 +195,11 @@ exports.sendOtp = async (req, res) => {
       if (!phoneNumber) {
         return res.status(400).json({ message: "No phone number found" });
       }
-      await sendOtpSms(phoneNumber, otp);
+      await sendOtpWhatsApp(phoneNumber, otp);
     } else if (channel === "push") {
-      if (!fcmToken)
+      if (!fcmToken) {
         return res.status(400).json({ message: "FCM token required for push" });
+      }
       await sendOtpPush(fcmToken, otp);
     } else {
       return res.status(400).json({ message: "Invalid channel" });

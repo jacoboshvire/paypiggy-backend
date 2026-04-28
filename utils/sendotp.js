@@ -14,20 +14,6 @@ const twilioClient = twilio(
   process.env.TWILIO_AUTH_TOKEN,
 );
 
-// EMAIL via Mailjet
-const sendOtpEmail = async (email, otp) => {
-  await mailjet.post("send", { version: "v3.1" }).request({
-    Messages: [
-      {
-        From: { Email: process.env.MAILJET_FROM_EMAIL, Name: "YourApp" },
-        To: [{ Email: email }],
-        Subject: "Your OTP Code",
-        TextPart: `Your OTP code is: ${otp}. It expires in 10 minutes.`,
-      },
-    ],
-  });
-};
-
 const formatPhone = (phone) => {
   phone = phone.replace(/[\s-]/g, "");
   if (phone.startsWith("0")) {
@@ -36,16 +22,29 @@ const formatPhone = (phone) => {
   return phone;
 };
 
-// SMS via Twilio
-const sendOtpSms = async (phone, otp) => {
+// EMAIL via Mailjet
+const sendOtpEmail = async (email, otp) => {
+  await mailjet.post("send", { version: "v3.1" }).request({
+    Messages: [
+      {
+        From: { Email: process.env.MAILJET_FROM_EMAIL, Name: "PayPiggy" },
+        To: [{ Email: email }],
+        Subject: "Your OTP Code",
+        TextPart: `Your PayPiggy OTP code is: ${otp}. It expires in 10 minutes.`,
+      },
+    ],
+  });
+};
+
+// WhatsApp OTP via Twilio
+const sendOtpWhatsApp = async (phone, otp) => {
   const formattedPhone = formatPhone(phone);
-  console.log("Sending SMS to:", formattedPhone);
-  console.log("From:", process.env.TWILIO_PHONE_NUMBER);
-  console.log("OTP:", otp);
+  console.log("Sending WhatsApp to:", formattedPhone);
+
   await twilioClient.messages.create({
-    body: `Your OTP code is: ${otp}. It expires in 10 minutes.`,
-    from: process.env.TWILIO_PHONE_NUMBER,
-    to: formattedPhone,
+    body: `Your PayPiggy OTP code is: ${otp}. It expires in 10 minutes.`,
+    from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+    to: `whatsapp:${formattedPhone}`,
   });
 };
 
@@ -55,9 +54,9 @@ const sendOtpPush = async (fcmToken, otp) => {
     token: fcmToken,
     notification: {
       title: "Your OTP Code",
-      body: `Your OTP code is: ${otp}. It expires in 10 minutes.`,
+      body: `Your PayPiggy OTP code is: ${otp}. It expires in 10 minutes.`,
     },
-    data: { otp },
+    data: { otp: String(otp) },
   });
 };
 
@@ -75,20 +74,22 @@ const sendTransactionEmail = async (email, message) => {
   });
 };
 
-// Transaction SMS
-const sendTransactionSms = async (phone, message) => {
+// Transaction WhatsApp
+const sendTransactionWhatsApp = async (phone, message) => {
   const formattedPhone = formatPhone(phone);
   await twilioClient.messages.create({
     body: message,
-    from: process.env.TWILIO_PHONE_NUMBER,
-    to: formattedPhone,
+    from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+    to: `whatsapp:${formattedPhone}`,
   });
 };
 
 module.exports = {
   sendOtpEmail,
-  sendOtpSms,
+  sendOtpWhatsApp,
+  sendOtpSms: sendOtpWhatsApp, // backward compat alias
   sendOtpPush,
   sendTransactionEmail,
-  sendTransactionSms,
+  sendTransactionWhatsApp,
+  sendTransactionSms: sendTransactionWhatsApp, // backward compat alias
 };

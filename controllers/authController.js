@@ -4,11 +4,12 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { generateOTP } = require("../utils/otpUtils");
-const { sendNotification } = require("../controllers/notificationController");
+const { sendNotification } = require("./notificationController");
 const {
   sendOtpEmail,
   sendOtpWhatsApp,
   sendOtpPush,
+  sendTransactionEmail,
 } = require("../utils/sendotp");
 
 exports.register = async (req, res) => {
@@ -62,11 +63,19 @@ exports.register = async (req, res) => {
 
     // Auto create vault
     const lockUntil = new Date();
-    lockUntil.setFullYear(lockUntil.getFullYear() + 1); // locked for 1 year by default
+    lockUntil.setFullYear(lockUntil.getFullYear() + 1);
 
     await db.query(
       "INSERT INTO vaults (user_id, account_id, name, balance, lock_until) VALUES (?, ?, ?, ?, ?)",
       [userId, accountId, "My Vault", 0.0, lockUntil],
+    );
+
+    // Send welcome notification
+    await sendNotification(
+      userId,
+      "Welcome to PayPiggy! 🐷",
+      "Your account has been created successfully. Start banking securely today.",
+      "general",
     );
 
     res.status(201).json({
@@ -85,7 +94,7 @@ exports.register = async (req, res) => {
   }
 };
 
-// LOGIN - returns OTP prompt instead of token directly
+// LOGIN
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -112,14 +121,12 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       const attempts = user.login_attempts + 1;
 
       if (attempts >= 10) {
-        // Suspend for 5 minutes
         const suspendedUntil = new Date(Date.now() + 5 * 60 * 1000);
 
         await db.query(
@@ -127,10 +134,17 @@ exports.login = async (req, res) => {
           [attempts, suspendedUntil, user.id],
         );
 
-        // Notify user
         await sendTransactionEmail(
           user.email,
           `Your PayPiggy account has been suspended for 5 minutes due to too many failed login attempts. If this was not you, please reset your password immediately.`,
+        );
+
+        // Save suspension notification
+        await sendNotification(
+          user.id,
+          "Account Suspended",
+          "Your account has been suspended for 5 minutes due to too many failed login attempts.",
+          "security",
         );
 
         return res.status(403).json({
@@ -140,7 +154,6 @@ exports.login = async (req, res) => {
         });
       }
 
-      // Increment attempts
       await db.query("UPDATE users SET login_attempts = ? WHERE id = ?", [
         attempts,
         user.id,
@@ -156,6 +169,14 @@ exports.login = async (req, res) => {
     await db.query(
       "UPDATE users SET login_attempts = 0, suspended_until = NULL WHERE id = ?",
       [user.id],
+    );
+
+    // Save login notification
+    await sendNotification(
+      user.id,
+      "New Login Detected",
+      "A new login was detected on your PayPiggy account. If this wasn't you, please change your password immediately.",
+      "security",
     );
 
     res.json({
@@ -212,13 +233,9 @@ exports.sendOtp = async (req, res) => {
   }
 };
 
-// VERIFY OTP - issues JWT on success
+// VERIFY OTP
 exports.verifyOtp = async (req, res) => {
   const { userId, otp } = req.body;
-
-  console.log("userId:", userId);
-  console.log("otp:", otp);
-  console.log("otp type:", typeof otp);
 
   try {
     const [rows] = await db.query(
@@ -232,7 +249,6 @@ exports.verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    // Mark OTP as verified
     await db.query("UPDATE otps SET verified = TRUE WHERE id = ?", [
       rows[0].id,
     ]);
@@ -242,7 +258,6 @@ exports.verifyOtp = async (req, res) => {
     ]);
     const user = users[0];
 
-    // Issue JWT
     const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET,
@@ -255,7 +270,7 @@ exports.verifyOtp = async (req, res) => {
   }
 };
 
-// FORGOT PASSWORD — sends OTP
+// FORGOT PASSWORD
 exports.forgotPassword = async (req, res) => {
   const { email, channel } = req.body;
 
@@ -280,12 +295,20 @@ exports.forgotPassword = async (req, res) => {
     );
 
     if (channel === "sms") {
-      await sendOtpSms(user.phone, otp);
+      await sendOtpWhatsApp(user.phone, otp);
     } else if (channel === "push") {
       await sendOtpPush(user.fcm_token, otp);
     } else {
       await sendOtpEmail(user.email, otp);
     }
+
+    // Save notification
+    await sendNotification(
+      user.id,
+      "Password Reset Requested",
+      "A password reset was requested for your PayPiggy account. If this wasn't you, please contact support.",
+      "security",
+    );
 
     res.json({
       message: "OTP sent",
@@ -316,7 +339,6 @@ exports.verifyForgotOtp = async (req, res) => {
       rows[0].id,
     ]);
 
-    // Generate reset token
     const resetToken = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
@@ -357,6 +379,14 @@ exports.resetPassword = async (req, res) => {
     await db.query(
       "UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?",
       [hashedPassword, user.id],
+    );
+
+    // Save notification
+    await sendNotification(
+      user.id,
+      "Password Changed",
+      "Your PayPiggy password has been changed successfully. If this wasn't you, contact support immediately.",
+      "security",
     );
 
     res.json({ message: "Password reset successful" });

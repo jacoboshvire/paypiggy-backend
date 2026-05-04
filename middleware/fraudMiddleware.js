@@ -15,6 +15,7 @@ const FRAUD_RULES = {
   MIN_USER_AGE: 18,
   REQUIRE_ADDRESS: true,
   AGE_RESTRICTED_AMOUNT: 500,
+  DAILY_TRANSFER_LIMIT: 5000, // £5000 per day
 };
 
 // ----------------------

@@ -296,6 +296,19 @@ const fraudCheck = async (req, res, next) => {
       });
     }
 
+    // 1. Large amount check
+if (amount > FRAUD_RULES.LARGE_AMOUNT_THRESHOLD) {
+  return await blockTransaction(400, "Transaction flagged", "Amount too large");
+}
+
+// 2. Daily limit check
+if (await checkDailyLimit(userId, amount)) {
+  return await blockTransaction(
+    400,
+    `Daily transfer limit of £${FRAUD_RULES.DAILY_TRANSFER_LIMIT} exceeded`,
+    "Daily transfer limit exceeded"
+  );
+
     next();
   } catch (err) {
     res.status(500).json({

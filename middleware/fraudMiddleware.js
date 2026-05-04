@@ -325,4 +325,5 @@ module.exports = {
   checkAddress,
   checkAgeRestrictedAmount,
   notifyFraudAlert,
+  checkDailyLimit,
 };

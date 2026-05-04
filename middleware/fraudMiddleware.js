@@ -236,7 +236,16 @@ const fraudCheck = async (req, res, next) => {
       );
     }
 
-    // 2. Velocity check
+    // 2. Daily limit check
+    if (await checkDailyLimit(userId, amount)) {
+      return await blockTransaction(
+        400,
+        `Daily transfer limit of £${FRAUD_RULES.DAILY_TRANSFER_LIMIT} exceeded`,
+        "Daily transfer limit exceeded",
+      );
+    }
+
+    // 3. Velocity check
     if (await checkVelocity(userId)) {
       return await blockTransaction(
         429,
@@ -245,7 +254,7 @@ const fraudCheck = async (req, res, next) => {
       );
     }
 
-    // 3. Account age check
+    // 4. Account age check
     if (await checkAccountAge(userId)) {
       return await blockTransaction(
         403,
@@ -254,7 +263,7 @@ const fraudCheck = async (req, res, next) => {
       );
     }
 
-    // 4. IP check
+    // 5. IP check
     if (await checkSuspiciousIP(ip)) {
       return await blockTransaction(
         403,
@@ -263,13 +272,13 @@ const fraudCheck = async (req, res, next) => {
       );
     }
 
-    // 5. Age restricted amount — require OTP if under 18 and amount >= 500
+    // 6. Age restricted amount — require OTP if under 18 and amount >= 500
     if (await checkAgeRestrictedAmount(userId, amount)) {
       req.requiresOtp = true;
       return next();
     }
 
-    // 6. User age check — block completely if under 18 and amount < 500
+    // 7. User age check — block completely if under 18 and amount < 500
     if (await checkUserAge(userId)) {
       return await blockTransaction(
         403,
@@ -278,20 +287,7 @@ const fraudCheck = async (req, res, next) => {
       );
     }
 
-    // 1. Large amount check
-if (amount > FRAUD_RULES.LARGE_AMOUNT_THRESHOLD) {
-  return await blockTransaction(400, "Transaction flagged", "Amount too large");
-}
-
-// 2. Daily limit check
-if (await checkDailyLimit(userId, amount)) {
-  return await blockTransaction(
-    400,
-    `Daily transfer limit of £${FRAUD_RULES.DAILY_TRANSFER_LIMIT} exceeded`,
-    "Daily transfer limit exceeded"
-  );
-
-    // 7. Risk scoring
+    // 8. Risk scoring
     const { risk, reasons } = await calculateRisk({ userId, amount });
 
     req.fraud = { risk, reasons };
@@ -308,8 +304,6 @@ if (await checkDailyLimit(userId, amount)) {
         reasons,
       });
     }
-
-    
 
     next();
   } catch (err) {

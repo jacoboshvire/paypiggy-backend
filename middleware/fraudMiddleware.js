@@ -192,6 +192,23 @@ const checkAgeRestrictedAmount = async (userId, amount) => {
 };
 
 // ----------------------
+// DAILY LIMIT CHECK
+// ----------------------
+const checkDailyLimit = async (userId, amount) => {
+  const [rows] = await db.query(
+    `SELECT COALESCE(SUM(t.amount), 0) as total
+     FROM transactions t
+     JOIN accounts a ON t.from_account = a.id
+     WHERE a.user_id = ?
+     AND DATE(t.created_at) = CURDATE()`,
+    [userId],
+  );
+
+  const totalToday = parseFloat(rows[0].total);
+  return totalToday + amount > FRAUD_RULES.DAILY_TRANSFER_LIMIT;
+};
+
+// ----------------------
 // MAIN FRAUD CHECK
 // ----------------------
 const fraudCheck = async (req, res, next) => {

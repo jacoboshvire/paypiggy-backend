@@ -111,9 +111,10 @@ const sendVerificationEmail = async (email, token) => {
 module.exports = {
   sendOtpEmail,
   sendOtpWhatsApp,
-  sendOtpSms: sendOtpWhatsApp, // backward compat alias
+  sendOtpSms: sendOtpWhatsApp,
   sendOtpPush,
   sendTransactionEmail,
   sendTransactionWhatsApp,
-  sendTransactionSms: sendTransactionWhatsApp, // backward compat alias
+  sendTransactionSms: sendTransactionWhatsApp,
+  sendVerificationEmail,
 };

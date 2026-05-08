@@ -84,6 +84,30 @@ const sendTransactionWhatsApp = async (phone, message) => {
   });
 };
 
+// Verification Email
+const sendVerificationEmail = async (email, token) => {
+  const verifyUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}`;
+  await mailjet.post("send", { version: "v3.1" }).request({
+    Messages: [
+      {
+        From: { Email: process.env.MAILJET_FROM_EMAIL, Name: "PayPiggy" },
+        To: [{ Email: email }],
+        Subject: "Verify your PayPiggy email",
+        TextPart: `Please verify your email by clicking this link: ${verifyUrl}. This link expires in 24 hours.`,
+        HTMLPart: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+            <h1 style="color: #4F46E5; margin-bottom: 8px;">Verify your email</h1>
+            <p style="color: #374151;">Thank you for signing up to PayPiggy. Please verify your email address to activate your account.</p>
+            <a href="${verifyUrl}" style="display: inline-block; background: #4F46E5; color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: bold; margin: 24px 0;">Verify Email</a>
+            <p style="color: #6B7280; font-size: 13px;">This link expires in 24 hours.</p>
+            <p style="color: #6B7280; font-size: 13px;">If you did not create a PayPiggy account, please ignore this email.</p>
+          </div>
+        `,
+      },
+    ],
+  });
+};
+
 module.exports = {
   sendOtpEmail,
   sendOtpWhatsApp,
